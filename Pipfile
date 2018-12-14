@@ -7,10 +7,10 @@ name = "pypi"
 django = "*"
 python-binance = "*"
 psycopg2 = "*"
-mock = "*"
 
 
 [dev-packages]
+mock = "*"
 
 [requires]
 python_version = "3.6"
