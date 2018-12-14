@@ -13,7 +13,6 @@ from django.utils import timezone
 from market_data.models import Kline
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 binance_client = BinanceClient(settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY)
