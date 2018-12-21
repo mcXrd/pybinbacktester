@@ -14,7 +14,6 @@ from market_data.models import Kline
 
 logger = logging.getLogger(__name__)
 
-
 binance_client = BinanceClient(settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY)
 
 
