@@ -9,15 +9,17 @@ from django.utils.timezone import now
 logger = logging.getLogger(__name__)
 
 
-def get_all_unprocessed_ticks(chronosphere: Chronosphere) -> List[datetime]:
+def get_all_unprocessed_ticks(chronosphere: Chronosphere, tick_period_seconds: int) -> List[datetime]:
+    # TODO - first need to be able to create hdf dataframe based on tick period (parametrized)
     pass
 
 
 def call_decider(decider: Decider, tick) -> dict:
+    # TODO - first need to be able to create hdf dataframe based on tick period (parametrized)
     pass
 
 
-def register_decider(decider_url: str, decider_name: str) -> None:
+def register_decider(decider_url: str, decider_name: str, tick_period_seconds: int) -> None:
     decider = Decider.objects.get_or_create(decider_url=decider_url, decider_name=decider_name)
     chronosphere = Chronosphere.objects.create(decider=decider, end_time=now())
 
