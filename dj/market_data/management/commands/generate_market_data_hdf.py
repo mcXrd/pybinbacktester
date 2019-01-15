@@ -32,13 +32,15 @@ def create_series_from_qs(qs: django.db.models.query.QuerySet, symbol: str) -> p
     return pd.Series(data=data, index=index)
 
 
-def fetch_input(time_interval: List[datetime]):
+def fetch_input(time_interval: List[datetime]) -> django.db.models.query.QuerySet:
     qs = Kline.objects.filter(open_time__gte=time_interval[0], open_time__lte=time_interval[1])
     return qs
 
 
-def save_output(df, filename):
-    df.to_hdf(os.path.join(HDF_STORAGE_PATH, filename), 'df')
+def save_output(df, filename) -> None:
+    file_path = os.path.join(HDF_STORAGE_PATH, filename)
+    df.to_hdf(file_path, 'df')
+    logger.info(f'Dataframe saved, file path: {file_path}')
 
 
 def create_dataframe(input_queryset: django.db.models.query.QuerySet) -> pd.DataFrame:
