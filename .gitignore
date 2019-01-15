@@ -113,3 +113,6 @@ dj/dj/secrets.py
 
 #idea
 .idea/
+
+# static storage
+dj/static_storage/
