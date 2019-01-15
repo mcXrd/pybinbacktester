@@ -7,6 +7,8 @@ name = "pypi"
 django = "*"
 python-binance = "*"
 psycopg2 = "*"
+tables = "*"
+pandas = "*"
 
 
 [dev-packages]
