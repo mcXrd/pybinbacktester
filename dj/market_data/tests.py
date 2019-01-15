@@ -118,7 +118,7 @@ class SyncKlinesTestCase(TestCase):
 class GenerateMarketDataHDFTestCase(TestCase):
 
     @mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
-    def test_insert_klines_dont_add_duplicates(self):
+    def test_close_price_is_found_in_hdf(self):
         test_symbol = 'ethbtc'
         insert_klines(test_symbol, PERIODS[1])
         df = create_dataframe(Kline.objects.all())
