@@ -148,3 +148,5 @@ LOGGING = {
         'level': 'ERROR',
     }
 }
+
+CHRONOSPHERE_INITIAL_DURATION_HOURS = 24

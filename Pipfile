@@ -9,6 +9,8 @@ python-binance = "*"
 psycopg2 = "*"
 tables = "*"
 pandas = "*"
+jsonschema= "*"
+requests= "*"
 
 
 [dev-packages]
