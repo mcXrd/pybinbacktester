@@ -16,6 +16,7 @@ class Chronosphere(models.Model):
     decider = models.ForeignKey('Decider', null=False, blank=False, on_delete=models.CASCADE)
     completed_percent = models.IntegerField(null=True, blank=True)
     end_time = models.DateTimeField(null=False, blank=False)
+    start_time = models.DateTimeField(null=False, blank=False)
 
 
 class TickRecord(models.Model):
