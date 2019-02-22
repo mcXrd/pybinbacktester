@@ -7,7 +7,7 @@ class Decider(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     decider_url = models.URLField(null=False, blank=False, max_length=1000)
-    decider_name = models.CharField(null=False, blank=False, max_length=1000)
+    decider_name = models.CharField(null=False, blank=False, max_length=1000, unique=True)
 
 
 class Chronosphere(models.Model):
