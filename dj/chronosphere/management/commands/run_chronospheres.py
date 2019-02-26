@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 import requests
 from chronosphere.models import Chronosphere, Decider, TickRecord
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 from jsonschema import validate
@@ -36,7 +37,8 @@ def call_decider(decider: Decider, tick: datetime):
     return r.json()
 
 
-def get_chrono_start_time(decider: Decider, default_offset_hours: int = 24) -> datetime:
+def get_chrono_start_time(decider: Decider,
+                          default_offset_hours: int = settings.CHRONOSPHERE_INITIAL_DURATION_HOURS) -> datetime:
     try:
         return Chronosphere.objects.filter(decider=decider).latest('end_time').end_time
     except Chronosphere.DoesNotExist:
