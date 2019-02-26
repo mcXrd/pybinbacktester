@@ -54,11 +54,12 @@ def create_and_run_chrono(decider: Decider):
     for tick in all_ticks:
         tick_result = call_decider(decider, tick)
         if tick_result['action'] == 'buy':
-            TickRecord.objects.create(chronosphere=chronosphere, tick_result=tick_result)
+            TickRecord.objects.create(chronosphere=chronosphere, action=tick_result['action'],
+                                      amount=tick_result['amount'], pair=tick_result['pair'])
 
         counter += 1
         completed_percent = counter / len(all_ticks)
-        if completed_percent.is_integer():
+        if completed_percent.is_integer() and completed_percent % 5 == 0:
             logger.info(f"decider {decider_name} completed {completed_percent} %")
             chronosphere.completed_percent = completed_percent
             chronosphere.save()

@@ -2,7 +2,7 @@ from chronosphere.models import Decider
 from django.core.management.base import BaseCommand
 
 
-def register_decider(decider_url: str, decider_name: str, tick_period_seconds: int) -> None:
+def register_decider(decider_url: str, decider_name: str) -> None:
     Decider.objects.create(decider_url=decider_url, decider_name=decider_name)
 
 

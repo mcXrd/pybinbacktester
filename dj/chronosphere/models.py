@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 
@@ -22,6 +21,8 @@ class Chronosphere(models.Model):
 class TickRecord(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
-    tick_result = JSONField()
-
     chronosphere = models.ForeignKey('Chronosphere', null=False, blank=False, on_delete=models.CASCADE)
+
+    amount = models.FloatField(null=False, blank=False)
+    pair = models.CharField(null=False, blank=False, max_length=100)
+    action = models.CharField(null=False, blank=False, max_length=100)
