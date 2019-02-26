@@ -15,6 +15,7 @@ requests= "*"
 
 [dev-packages]
 mock = "*"
+responses ="*"
 
 [requires]
 python_version = "3.6"
