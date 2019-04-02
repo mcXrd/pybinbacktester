@@ -9,10 +9,13 @@ python-binance = "*"
 psycopg2 = "*"
 tables = "*"
 pandas = "*"
+jsonschema= "*"
+requests= "*"
 
 
 [dev-packages]
 mock = "*"
+responses ="*"
 
 [requires]
 python_version = "3.6"
