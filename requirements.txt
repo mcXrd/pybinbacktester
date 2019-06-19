@@ -1,0 +1,11 @@
+django
+python-binance
+pandas
+jsonschema
+requests
+psycopg2
+pyrsistent
+pytest
+mock
+responses
+tables

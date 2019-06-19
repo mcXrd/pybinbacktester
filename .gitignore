@@ -115,4 +115,4 @@ dj/dj/secrets.py
 .idea/
 
 # static storage
-dj/static_storage/
+dj/static_storage/*
