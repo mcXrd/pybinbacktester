@@ -1,0 +1,30 @@
+version: 2 # use CircleCI 2.0
+jobs: # A basic unit of work in a run
+  build: # runs not using Workflows must have a `build` job as entry point
+    # directory where steps are run
+    working_directory: ~/dj
+    docker: # run the steps with Docker
+      # CircleCI Python images available at: https://hub.docker.com/r/circleci/python/
+      - image: continuumio/miniconda3:latest
+        environment: # environment variables for primary container
+          DATABASE_URL: postgresql://root@localhost/pybin_test?sslmode=disable
+      # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
+      - image: circleci/postgres:9.6.2
+        environment: # environment variables for the Postgres container.
+          POSTGRES_USER: pybin
+          POSTGRES_DB: pybin_test
+    steps: # steps that comprise the `build` job
+      - checkout # check out source code to working directory
+      - run: conda create --name py36 python=3.6 psycopg2 twisted regex
+      - run: echo "source activate py36" >> $BASH_ENV
+      - run: pip install -r requirements.txt
+      - run:
+          command: |
+            cd dj
+            echo "BINANCE_API_KEY, BINANCE_SECRET_KEY = ('' , '')" | tee dj/secrets.py
+            python manage.py test
+      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: test-results
+      - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: test-results
+          destination: tr1
