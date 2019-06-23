@@ -37,7 +37,6 @@ def fetch_input(time_interval: List[datetime]) -> django.db.models.query.QuerySe
 
 def save_output(df, filename) -> None:
     file_path = os.path.join(settings.HDF_STORAGE_PATH, filename)
-    #raise Exception(file_path)
     df.to_hdf(file_path, 'df')
     logger.info(f'Dataframe saved, file path: {file_path}')
 
