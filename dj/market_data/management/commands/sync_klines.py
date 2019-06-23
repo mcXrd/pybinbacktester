@@ -22,19 +22,20 @@ def binance_timestamp_to_utc_datetime(binance_timestamp: str) -> datetime:
 
 
 def get_klines(symbol: str, binance_timestamp: str) -> List[List]:
-    return binance_client.get_historical_klines(symbol, BinanceClient.KLINE_INTERVAL_5MINUTE, binance_timestamp)
+    return binance_client.get_historical_klines(symbol, BinanceClient.KLINE_INTERVAL_1MINUTE, binance_timestamp)
 
 
 # 1 day period is meant for initializaton and 1 hour for updates
 # note that updates can be run anytime and should be run once per kline
 # interval eg. BinanceClient.KLINE_INTERVAL_5MINUTE
 PERIODS = {1: "1 hour ago UTC", 2: "1 day ago UTC"}
-PERIOD_CPU_COUNT_MAP = {1: os.cpu_count() * 16, 2: os.cpu_count() * 4}
+PERIOD_CPU_COUNT_MAP = {1: os.cpu_count() * 8, 2: os.cpu_count() * 4}
 
 
 def insert_klines(symbol: str, binance_timestamp: str):
     klines = get_klines(symbol, binance_timestamp)
     latest_kline = Kline.objects.order_by('open_time').filter(symbol=symbol).last()
+    bulk_klines = []
     for kline in klines:
         open_time = binance_timestamp_to_utc_datetime(kline[0])
         if latest_kline and open_time <= latest_kline.open_time:
@@ -53,7 +54,9 @@ def insert_klines(symbol: str, binance_timestamp: str):
                         'taker_buy_base_asset_volume': kline[9],
                         'taker_buy_quote_asset_volume': kline[10],
                         'ignore': kline[11]}
-        Kline.objects.create(symbol=symbol, **kline_fields)
+        kline_instance = Kline(symbol=symbol, **kline_fields)
+        bulk_klines.append(kline_instance)
+    Kline.objects.bulk_create(bulk_klines)
     logger.debug(f'Symbol {symbol} synced.')
 
 
