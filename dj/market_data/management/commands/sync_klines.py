@@ -72,6 +72,7 @@ def main(period: int):
         for ticker_symbol in ticker_symbols:
             executor.submit(insert_klines, ticker_symbol, PERIODS[period])
 
+
     remove_too_old_klines()
 
 
