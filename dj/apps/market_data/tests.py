@@ -1,8 +1,8 @@
 import mock
 from django.test import TestCase
-from market_data.management.commands.generate_market_data_hdf import create_dataframe
-from market_data.management.commands.sync_klines import insert_klines, PERIODS, remove_too_old_klines
-from market_data.models import Kline
+from apps.market_data.management.commands.generate_market_data_hdf import create_dataframe
+from apps.market_data.management.commands.sync_klines import insert_klines, PERIODS, remove_too_old_klines
+from apps.market_data.models import Kline
 
 TEST_KLINES = [[
     1544628120000,
@@ -73,7 +73,7 @@ def get_klines_mock_old_ones(symbol, since):
 
 class SyncKlinesTestCase(TestCase):
 
-    @mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
+    @mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
     def test_insert_klines_dont_add_duplicates(self):
         assert Kline.objects.all().count() == 0
         insert_klines('ethbtc', PERIODS[1])
@@ -84,28 +84,28 @@ class SyncKlinesTestCase(TestCase):
         assert Kline.objects.all().count() == 2
 
     def test_insert_klines_can_update_newer_klines(self):
-        with mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline):
+        with mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline):
             assert Kline.objects.all().count() == 0
             insert_klines('ethbtc', PERIODS[1])
             insert_klines('ethada', PERIODS[1])
             assert Kline.objects.all().count() == 2
-        with mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_two_klines):
+        with mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_two_klines):
             insert_klines('ethbtc', PERIODS[1])
             insert_klines('ethada', PERIODS[1])
             assert Kline.objects.all().count() == 4
 
     def test_insert_klines_dont_add_too_old_klines(self):
-        with mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline):
+        with mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline):
             assert Kline.objects.all().count() == 0
             insert_klines('ethbtc', PERIODS[1])
             insert_klines('ethada', PERIODS[1])
             assert Kline.objects.all().count() == 2
-        with mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_old_ones):
+        with mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_old_ones):
             insert_klines('ethbtc', PERIODS[1])
             insert_klines('ethada', PERIODS[1])
             assert Kline.objects.all().count() == 2
 
-    @mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
+    @mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
     def test_remove_too_old_klines(self):
         assert Kline.objects.all().count() == 0
         insert_klines('ethbtc', PERIODS[1])
@@ -117,7 +117,7 @@ class SyncKlinesTestCase(TestCase):
 
 class GenerateMarketDataHDFTestCase(TestCase):
 
-    @mock.patch("market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
+    @mock.patch("apps.market_data.management.commands.sync_klines.get_klines", get_klines_mock_one_kline)
     def test_close_price_is_found_in_hdf(self):
         test_symbol = 'ethbtc'
         insert_klines(test_symbol, PERIODS[1])
