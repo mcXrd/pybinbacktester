@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.market_data.apps.MarketDataConfig',
+    'apps.predictive_models.apps.PredictiveModelsConfig',
 ]
 
 MIDDLEWARE = [
