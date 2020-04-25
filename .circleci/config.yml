@@ -17,6 +17,7 @@ jobs: # A basic unit of work in a run
       - checkout # check out source code to working directory
       - run: conda create --name py37 python=3.7 psycopg2 twisted regex
       - run: echo "source activate py37" >> $BASH_ENV
+      - run: conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
       - run: pip install -r requirements.txt
       - run:
           command: |
