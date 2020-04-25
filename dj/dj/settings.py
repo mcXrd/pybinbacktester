@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'market_data.apps.MarketDataConfig',
-    'chronosphere.apps.ChronosphereConfig',
 ]
 
 MIDDLEWARE = [
@@ -148,5 +147,3 @@ LOGGING = {
         'level': 'ERROR',
     }
 }
-
-CHRONOSPHERE_INITIAL_DURATION_HOURS = 24
