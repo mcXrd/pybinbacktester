@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def get_symbols_from_qs(qs: django.db.models.query.QuerySet) -> List[str]:
     symbols = []
-    for symbol in Kline.objects.values('symbol').distinct():
+    for symbol in qs.values('symbol').distinct():
         symbols.append(symbol['symbol'])
     return symbols
 
@@ -31,6 +31,8 @@ def create_series_from_qs(qs: django.db.models.query.QuerySet, symbol: str) -> p
 
 
 def fetch_input(time_interval: List[datetime]) -> django.db.models.query.QuerySet:
+    if time_interval is None:
+        return Kline.objects.all()
     qs = Kline.objects.filter(open_time__gte=time_interval[0], open_time__lte=time_interval[1])
     return qs
 
@@ -59,7 +61,7 @@ class Command(BaseCommand):
     help = 'Sync klines'
 
     def add_arguments(self, parser):
-        parser.add_argument('--time-interval', nargs='+', type=command_datetime, required=True,
+        parser.add_argument('--time-interval', nargs='+', type=command_datetime, required=False,
                             help="'2002-12-25 00:00:00' '2019-01-1 00:00:00'")
         parser.add_argument('--hdf-filename', type=str, required=True)
 
