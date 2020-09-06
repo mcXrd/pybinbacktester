@@ -1,5 +1,5 @@
 # pybinbacktester
-Solution for crypto trading on binance
+Solution for trading crypto on binance
 
 # installation guide
 1) in dj/dj/ create secrets.py file with 
