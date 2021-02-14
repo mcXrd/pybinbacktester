@@ -22,14 +22,15 @@ def binance_timestamp_to_utc_datetime(binance_timestamp: str) -> datetime:
 
 
 def get_klines(symbol: str, binance_timestamp: str) -> List[List]:
-    return binance_client.get_historical_klines(symbol, BinanceClient.KLINE_INTERVAL_1MINUTE, binance_timestamp)
+    return binance_client.get_historical_klines(symbol, BinanceClient.KLINE_INTERVAL_1HOUR, binance_timestamp)
 
 
 # 1 day period is meant for initializaton and 1 hour for updates
 # note that updates can be run anytime and should be run once per kline
 # interval eg. BinanceClient.KLINE_INTERVAL_5MINUTE
-PERIODS = {1: "1 hour ago UTC", 2: "1 day ago UTC"}
+PERIODS = {1: "30 days ago UTC", 2: "1 day ago UTC"}
 PERIOD_CPU_COUNT_MAP = {1: os.cpu_count() * 8, 2: os.cpu_count() * 4}
+
 
 
 def insert_klines(symbol: str, binance_timestamp: str):
@@ -67,14 +68,17 @@ def remove_too_old_klines(days=1):
 
 
 def main(period: int):
+    key_symbols = ["BTCUSDT"]
     tickers = binance_client.get_all_tickers()
     ticker_symbols = {x["symbol"] for x in tickers}
+    bnbonly = [x for x in ticker_symbols if "BNB" in x]
+    ticker_symbols = bnbonly + key_symbols
 
     with ProcessPoolExecutor(max_workers=PERIOD_CPU_COUNT_MAP[period]) as executor:
         for ticker_symbol in ticker_symbols:
             executor.submit(insert_klines, ticker_symbol, PERIODS[period])
 
-    remove_too_old_klines()
+    #remove_too_old_klines()
 
 
 class Command(BaseCommand):
