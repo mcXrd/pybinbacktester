@@ -116,3 +116,6 @@ dj/dj/secrets.py
 
 # static storage
 dj/static_storage/*
+
+# model state dict
+dj/apps/predictive_models/jane1/*.pt

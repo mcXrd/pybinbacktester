@@ -9,3 +9,5 @@ pytest
 mock
 responses
 tables
+torch
+git+https://github.com/Binance-docs/Binance_Futures_python
