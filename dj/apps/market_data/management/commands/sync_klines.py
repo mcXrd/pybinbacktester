@@ -1,32 +1,50 @@
 import logging
-import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Callable
+from binance_f import RequestClient
 
 import pytz
 from binance.client import Client as BinanceClient
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from binance_f.model import CandlestickInterval, Candlestick
+from apps.market_data.usdtfutures_utils import get_usdtfutures_historical_klines
 
 from apps.market_data.models import Kline
 
 logger = logging.getLogger(__name__)
 
 TIME_INTERVAL = "360 days ago UTC"
+EXCHANGE_FUTURES = "usdtfutures"
+EXCHANGE_SPOT = "spot"
 
 
 def binance_timestamp_to_utc_datetime(binance_timestamp: str) -> datetime:
     return datetime.utcfromtimestamp(binance_timestamp / 1000).replace(tzinfo=pytz.utc)
 
 
-def get_klines(symbol: str) -> List[List]:
-    binance_client = BinanceClient(settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY)
-    return binance_client.get_historical_klines(symbol, BinanceClient.KLINE_INTERVAL_1HOUR, TIME_INTERVAL)
+def get_spot_klines(symbol: str) -> List[List]:
+    binance_client = BinanceClient(
+        settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY
+    )
+    return binance_client.get_historical_klines(
+        symbol, BinanceClient.KLINE_INTERVAL_1HOUR, TIME_INTERVAL
+    )
 
 
-def insert_klines(symbol: str):
+def get_usdt_futures_klines(symbol: str) -> List[List]:
+    request_client = RequestClient(
+        api_key=settings.BINANCE_API_KEY, secret_key=settings.BINANCE_SECRET_KEY
+    )
+    get_klines: Callable = request_client.get_candlestick_data
+    return get_usdtfutures_historical_klines(
+        get_klines, symbol, CandlestickInterval.HOUR1, TIME_INTERVAL
+    )
+
+
+def insert_klines(symbol: str, get_klines: Callable, exchange: str):
     klines = get_klines(symbol)
     latest_kline = Kline.objects.order_by("open_time").filter(symbol=symbol).last()
     bulk_klines = []
@@ -50,7 +68,8 @@ def insert_klines(symbol: str):
             "taker_buy_quote_asset_volume": kline[10],
             "ignore": kline[11],
         }
-        kline_instance = Kline(symbol=symbol, **kline_fields)
+        symbol_name = exchange + "_" + symbol
+        kline_instance = Kline(symbol=symbol_name, **kline_fields)
         bulk_klines.append(kline_instance)
     Kline.objects.bulk_create(bulk_klines)
     logger.debug(f"Symbol {symbol} synced.")
@@ -61,8 +80,10 @@ def remove_too_old_klines(days=1):
 
 
 def main():
-    binance_client = BinanceClient(settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY)
-    key_currencies = ["BTCBUSD", "ADABUSD", "ETHBUSD", "BNBBUSD", "XRPBUSD", "LTCBUSD"]
+    binance_client = BinanceClient(
+        settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY
+    )
+    key_currencies = settings.USDT_FUTURES_PAIRS
     tickers = binance_client.get_all_tickers()
     ticker_symbols = {x["symbol"] for x in tickers}
     for c in key_currencies:
@@ -71,12 +92,17 @@ def main():
     futures = {}
     with ProcessPoolExecutor(max_workers=6) as executor:
         for ticker_symbol in key_currencies:
-            futures[ticker_symbol] = executor.submit(insert_klines, ticker_symbol)
+            futures[EXCHANGE_SPOT + ticker_symbol] = executor.submit(
+                insert_klines, ticker_symbol, get_spot_klines, EXCHANGE_SPOT
+            )
+            futures[EXCHANGE_FUTURES + ticker_symbol] = executor.submit(
+                insert_klines, ticker_symbol, get_usdt_futures_klines, EXCHANGE_FUTURES
+            )
 
     for ticker_symbol in futures:
         futures[ticker_symbol].result()
 
-    #remove_too_old_klines()
+    # remove_too_old_klines()
 
 
 class Command(BaseCommand):
@@ -90,4 +116,6 @@ class Command(BaseCommand):
         logger.info("Started at %s" % start_time.strftime("%X"))
         main()
         logger.info("End time is %s" % timezone.now().strftime("%X"))
-        logger.info("Duration %s seconds" % (timezone.now() - start_time).total_seconds())
+        logger.info(
+            "Duration %s seconds" % (timezone.now() - start_time).total_seconds()
+        )

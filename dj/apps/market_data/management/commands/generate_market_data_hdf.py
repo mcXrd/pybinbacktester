@@ -56,7 +56,8 @@ def add_hyperfeatures_to_df(df):
         df["{}_ewm_mean".format(c)] = df[c].ewm(com=0.5).mean()
         df["{}_ewm_std".format(c)] = df[c].ewm(com=0.5).std()
         df["{}_ewm_cov".format(c)] = df[c].ewm(com=0.5).cov()
-        for base_size in [2, 8, 32, 128]:
+        windows = [2, 8, 32, 128]
+        for base_size in windows:
             df["{}_mean_{}".format(c, base_size)] = (
                 df[c].rolling(window=base_size).mean()
             )
@@ -77,6 +78,9 @@ def add_forecasts_to_df(df):
     open_price_columns = [x for x in original_columns if x.endswith("_open_price")]
 
     for c in open_price_columns:
+        if "spot" in c:
+            continue
+
         trade_in_1h = "trade_in_1h_{}".format(c)
         trade_in_2h = "trade_in_2h_{}".format(c)
         trade_in_3h = "trade_in_3h_{}".format(c)
@@ -89,7 +93,9 @@ def add_forecasts_to_df(df):
     return df[:-3]
 
 
-def create_base_dataframe(input_queryset: django.db.models.query.QuerySet) -> pd.DataFrame:
+def create_base_dataframe(
+    input_queryset: django.db.models.query.QuerySet,
+) -> pd.DataFrame:
     df = pd.DataFrame()
     symbols = get_symbols_from_qs(input_queryset)
 
