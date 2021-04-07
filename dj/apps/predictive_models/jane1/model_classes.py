@@ -1,7 +1,39 @@
 import torch
-ENCODED_FEATURES_COUNT = 50
-JaneStreetDatasetPredict_Y_LEN = 18
-JaneStreetEncode1Dataset_Y_LEN = 1296
+from typing import Callable
+
+ENCODED_FEATURES_COUNT = 200
+
+
+def generate_settings_from_df(df):
+    last_trade_in_column = -1
+    for col in df.columns:
+        if col.startswith("trade_in"):
+            last_trade_in_column += 1
+        else:
+            break
+    RESP_START = df.iloc[:, 0].name
+    RESP_END = df.iloc[:, last_trade_in_column].name
+    JaneStreetDatasetPredict_Y_LEN = len(df.loc[:, RESP_START:RESP_END].columns)
+
+    JaneStreetEncode1Dataset_Y_START_COLUMN = df.iloc[:, last_trade_in_column + 1].name
+    JaneStreetEncode1Dataset_Y_END_COLUMN = df.iloc[:, -1].name
+
+    JaneStreetEncode1Dataset_Y_LEN = len(
+        df.loc[
+            :,
+            JaneStreetEncode1Dataset_Y_START_COLUMN:JaneStreetEncode1Dataset_Y_END_COLUMN,
+        ].columns
+    )
+
+    return (
+        JaneStreetDatasetPredict_Y_LEN,
+        RESP_START,
+        RESP_END,
+        JaneStreetEncode1Dataset_Y_LEN,
+        JaneStreetEncode1Dataset_Y_START_COLUMN,
+        JaneStreetEncode1Dataset_Y_END_COLUMN,
+    )
+
 
 def get_core_model(
     input_size: int,
@@ -9,6 +41,7 @@ def get_core_model(
     hidden_count: int,
     dropout_p: float = 0.16,
     net_width: int = 32,
+    activation: Callable = None,
 ) -> torch.nn.Module:
     assert hidden_count > 0
     layers = []
@@ -18,8 +51,13 @@ def get_core_model(
         if just_linear:
             return
         layers.append(torch.nn.Dropout(p=dropout_p))
-        layers.append(torch.nn.ELU())
-        # layers.append(torch.nn.ReLU())
+        if activation:
+            layers.append(activation())
+        else:
+            # layers.append(torch.nn.ELU())
+            # layers.append(torch.nn.LeakyReLU())
+            layers.append(torch.nn.Sigmoid())
+            # layers.append(torch.nn.ReLU())
         layers.append(torch.nn.BatchNorm1d(_output_size))
 
     append_layer(layers, input_size, net_width)
@@ -35,10 +73,20 @@ class autoencoder(torch.nn.Module):
     def __init__(self, input_size: int, output_size: int, bottleneck: int):
         super(autoencoder, self).__init__()
         self.encoder = get_core_model(
-            input_size, bottleneck, 1, dropout_p=0.4, net_width=2000
+            input_size,
+            bottleneck,
+            1,
+            dropout_p=0.5,
+            net_width=800,
+            activation=torch.nn.ELU,
         )
         self.decoder = get_core_model(
-            bottleneck, output_size, 1, dropout_p=0.4, net_width=2000
+            bottleneck,
+            output_size,
+            1,
+            dropout_p=0.5,
+            net_width=800,
+            activation=torch.nn.ELU,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -48,11 +96,12 @@ class autoencoder(torch.nn.Module):
         return x
 
 
-def create_predict_model():
+def create_predict_model(JaneStreetDatasetPredict_Y_LEN):
     return get_core_model(
         ENCODED_FEATURES_COUNT,
         JaneStreetDatasetPredict_Y_LEN,
-        hidden_count=2,
-        dropout_p=0.4,
+        hidden_count=5,
+        dropout_p=0.5,
         net_width=2000,
+        activation=torch.nn.ELU,
     )

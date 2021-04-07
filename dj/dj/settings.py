@@ -136,9 +136,22 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
         },
+        "applogfile": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(HDF_STORAGE_PATH, "pybin.log"),
+            "maxBytes": 1024 * 1024 * 5,  # 5MB
+            "backupCount": 5,
+        },
     },
     "loggers": {
         "": {"level": "DEBUG", "handlers": ["console"]},
+        "pybin": {
+            "handlers": [
+                "applogfile",
+            ],
+            "level": "ERROR",
+        },
     },
     "requests": {
         "handlers": ["console"],
