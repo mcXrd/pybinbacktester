@@ -46,7 +46,7 @@ def get_usdt_futures_klines(symbol: str) -> List[List]:
 
 def insert_klines(symbol: str, get_klines: Callable, exchange: str):
     klines = get_klines(symbol)
-    latest_kline = Kline.objects.order_by("open_time").filter(symbol=symbol).last()
+    latest_kline = Kline.objects.order_by("open_time").filter(symbol=exchange+"_"+symbol).last()
     bulk_klines = []
     for kline in klines:
         open_time = binance_timestamp_to_utc_datetime(kline[0])
