@@ -25,6 +25,17 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         side = OrderSide.BUY
         return self.order(side, position)
 
+    def get_current_fee_currency_price(self):
+        request_client = self.get_request_client()
+        price_result = request_client.get_candlestick_data(
+            symbol=settings.FEE_CURRENCY + "USDT",
+            interval=CandlestickInterval.MIN1,
+            startTime=None,
+            endTime=None,
+            limit=1,
+        )
+        return float(price_result[0].close)
+
     def get_current_close_price_and_std(self, request_client, symbol):
         price_result = request_client.get_candlestick_data(
             symbol=symbol,
@@ -34,7 +45,9 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             limit=2,
         )
 
-        std = np.std([price_result[0], price_result[-1]], ddof=1)
+        std = np.std(
+            [float(price_result[0].close), float(price_result[-1].close)], ddof=1
+        )
         close_price = price_result[-1].close
         return float(close_price), std
 
@@ -43,10 +56,10 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         result = request_client.get_account_information()
         balance = None
         for asset in result.assets:
-            if asset.asset == "BNB":
+            if asset.asset == settings.FEE_CURRENCY:
                 balance = asset.marginBalance
         if balance is None:
-            raise Exception("BNB asset not found")
+            raise Exception("{} asset not found".format(settings.FEE_CURRENCY))
         return balance
 
     @staticmethod
@@ -54,12 +67,15 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         mu, sigma = 0, std  # mean and standard deviation
         s = np.random.normal(mu, sigma, 1)
         noise = s[0]
-        return price + noise
+        price = price + noise
+        return price
 
     def wait_for_orders_to_fill(self, request_client, position):
-        iters_to_wait = 5
+        iters_to_wait = 3
         iters = 0
         while True:
+            if not position.alive:
+                raise Exception("Executing position which is not alive")
             iters += 1
             time.sleep(1)
             res = request_client.get_open_orders()
@@ -93,11 +109,17 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         retries = -1
         noised_price = None
         while True:
+            if not position.alive:
+                raise Exception("Executing position which is not alive")
             retries += 1
             price, std = self.get_current_close_price_and_std(
                 request_client, position.base_symbol
             )
-            noised_price = self.add_noise_to_price(price, std)
+            if retries > 50:
+                noised_price = self.add_noise_to_price(price, std)
+            else:
+                noised_price = price
+            noised_price = round(noised_price, 5)
             msg = "Price: {} ; Noised price {} ; STD: {} ; retries: {} ;".format(
                 price, noised_price, std, retries
             )
@@ -109,7 +131,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                     symbol=position.base_symbol,
                     side=side,
                     ordertype=OrderType.LIMIT,
-                    price=round(float(noised_price), 5),
+                    price=noised_price,
                     quantity=round(float(position.quantity), 5),
                     timeInForce=TimeInForce.GTC,
                 )
@@ -117,19 +139,23 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                 PositionLog.objects.create(
                     position=position, name="Order post failed", log_message=str(e)
                 )
-                time.sleep(retries + 1)
+                time.sleep(1)
                 continue
 
             log = PositionLog.objects.create(position=position, name="Order posted")
             log.log_order(order)
-            if self.wait_for_orders_to_fill():  # order was filled
+            if self.wait_for_orders_to_fill(
+                request_client, position
+            ):  # order was filled
                 break
         return noised_price
 
 
 class PositionLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    position = models.ForeignKey("predictive_models.Position", related_name="logs", on_delete=models.CASCADE)
+    position = models.ForeignKey(
+        "predictive_models.Position", related_name="logs", on_delete=models.CASCADE
+    )
     log_message = models.TextField(null=True, blank=True)
     log_json = models.JSONField(null=True, blank=True)
     name = models.CharField(null=True, blank=True, max_length=200)
@@ -177,6 +203,13 @@ class Position(models.Model):
 
     initial_fee_balance = models.FloatField(null=True, blank=True)
     after_fee_balance = models.FloatField(null=True, blank=True)
+    open_fee_currency_price = models.FloatField(null=True, blank=True)
+
+    liq_initial_fee_balance = models.FloatField(null=True, blank=True)
+    liq_after_fee_balance = models.FloatField(null=True, blank=True)
+    liq_fee_currency_price = models.FloatField(null=True, blank=True)
+
+    alive = models.BooleanField(default=True)
 
     @staticmethod
     def reverse_side(side):
@@ -185,22 +218,41 @@ class Position(models.Model):
         return Position.SHORT
 
     def liquidate(self, trade_interface: TradeInterface):
+        if not self.open_finished:
+            raise Exception("Position is not even opened yet.")
+        if self.liquidated:
+            raise Exception("Already liquidated.")
         try:
             self.start_to_liquidate = now()
             side = self.reverse_side(self.side)
+            self.liq_initial_fee_balance = (
+                trade_interface.get_current_fee_currency_balance()
+            )
+            self.liq_fee_currency_price = (
+                trade_interface.get_current_fee_currency_price()
+            )
             trade_price = self._trade(trade_interface, side)
             self.liquidated_price = trade_price
+            self.liq_after_fee_balance = (
+                trade_interface.get_current_fee_currency_balance()
+            )
             self.liquidation_finished = now()
+            self.liquidated = True
         finally:
             self.save()
 
-    def open(self, trade_interface: TradeInterface, side: str):
+    def open(self, trade_interface: TradeInterface):
+        if self.open_finished:
+            raise Exception("Open already finished.")
         try:
             self.start_to_open = now()
             self.initial_fee_balance = (
                 trade_interface.get_current_fee_currency_balance()
             )
-            trade_price = self._trade(trade_interface, side)
+            self.open_fee_currency_price = (
+                trade_interface.get_current_fee_currency_price()
+            )
+            trade_price = self._trade(trade_interface, self.side)
             self.open_price = trade_price
             self.after_fee_balance = trade_interface.get_current_fee_currency_balance()
             self.open_finished = now()

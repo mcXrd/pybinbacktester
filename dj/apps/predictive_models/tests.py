@@ -17,7 +17,7 @@ class PositionTestCase(TestCase):
     def test_create_empty_position(self):
         Position.objects.create(
             liquidate_at=now(),
-            quantity=20,
+            quantity=6,
             symbol="usdtfutures_ADAUSDT",
-            side=Position.SHORT,
+            side=Position.LONG,
         )
