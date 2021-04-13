@@ -159,7 +159,6 @@ LOGGING = {
     },
 }
 
-"""
 USDT_FUTURES_PAIRS = [
     "BTCUSDT",
     "ETHUSDT",
@@ -170,13 +169,8 @@ USDT_FUTURES_PAIRS = [
     "XRPUSDT",
     "LTCUSDT",
 ]
-"""
 
-USDT_FUTURES_PAIRS = [
-    "BTCUSDT",
-    "ETHUSDT",
-    "BNBUSDT",
-    "ADAUSDT",
-]
 
 FEE_CURRENCY = "BNB"
+EXCHANGE_FUTURES = "usdtfutures"
+EXCHANGE_SPOT = "spot"
