@@ -77,15 +77,15 @@ class autoencoder(torch.nn.Module):
             bottleneck,
             1,
             dropout_p=0.5,
-            net_width=800,
-            activation=torch.nn.ELU,
+            net_width=2000,
+            activation=torch.nn.ELU
         )
         self.decoder = get_core_model(
             bottleneck,
             output_size,
             1,
             dropout_p=0.5,
-            net_width=800,
+            net_width=2000,
             activation=torch.nn.ELU,
         )
 
@@ -100,8 +100,8 @@ def create_predict_model(JaneStreetDatasetPredict_Y_LEN):
     return get_core_model(
         ENCODED_FEATURES_COUNT,
         JaneStreetDatasetPredict_Y_LEN,
-        hidden_count=5,
+        hidden_count=3,
         dropout_p=0.5,
-        net_width=2000,
+        net_width=3000,
         activation=torch.nn.ELU,
     )

@@ -83,9 +83,9 @@ def add_hyperfeatures_to_df(df):
 
 def add_forecasts_to_df(df):
     original_columns = list(df.columns)
-    open_price_columns = [x for x in original_columns if x.endswith("_open_price")]
+    close_price_columns = [x for x in original_columns if x.endswith("_close_price")]
 
-    for c in open_price_columns:
+    for c in close_price_columns:
         if "spot" in c:
             continue
 

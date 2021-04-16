@@ -1,4 +1,5 @@
 from django.db import models
+import datetime
 
 """
 all tickers example:
@@ -23,3 +24,11 @@ class Kline(models.Model):
     taker_buy_base_asset_volume = models.FloatField(null=False, blank=False)
     taker_buy_quote_asset_volume = models.FloatField(null=False, blank=False)
     ignore = models.FloatField(null=False, blank=False, default=0.0)
+
+    def get_kline_shifted_forward(self, hours: int):
+        assert hours and isinstance(hours, int)
+        k = Kline.objects.get(
+            symbol=self.symbol,
+            close_time=self.close_time + datetime.timedelta(hours=hours),
+        )
+        return k

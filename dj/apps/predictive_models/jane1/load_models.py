@@ -7,6 +7,7 @@ from apps.predictive_models.jane1.model_classes import (
 import os
 import torch
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -38,3 +39,32 @@ def load_predictmodel():
     model.load_state_dict(torch.load("{}/predict_model_state_dict.pt".format(DIR_PATH)))
     model.eval()
     return model
+
+
+def load_train_df(stop=None):
+    path = "{}/learning_df.hdf".format(DIR_PATH)
+    df = pd.read_hdf(path, stop=stop)
+    df = df.fillna(0)
+    return df
+
+
+def resort_columns(learning_df, df_to_sort):
+    df = df_to_sort.reindex(learning_df.columns, axis=1)
+    return df
+
+
+def preprocessing_scale_df(
+    df: pd.DataFrame, last_min_max_scaler: StandardScaler
+) -> pd.DataFrame:
+    start_i = JaneStreetEncode1Dataset_Y_START_COLUMN
+    end_i = JaneStreetEncode1Dataset_Y_END_COLUMN
+    if not last_min_max_scaler:
+        last_min_max_scaler = StandardScaler()
+        df.loc[:, start_i:end_i] = last_min_max_scaler.fit_transform(
+            df.loc[:, start_i:end_i]
+        )
+    else:
+        df.loc[:, start_i:end_i] = last_min_max_scaler.transform(
+            df.loc[:, start_i:end_i]
+        )
+    return df, last_min_max_scaler
