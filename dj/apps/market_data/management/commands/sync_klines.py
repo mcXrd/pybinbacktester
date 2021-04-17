@@ -9,7 +9,7 @@ from binance.client import Client as BinanceClient
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from binance_f.model import CandlestickInterval, Candlestick
+from binance_f.model import CandlestickInterval
 from apps.market_data.usdtfutures_utils import get_usdtfutures_historical_klines
 
 from apps.market_data.models import Kline

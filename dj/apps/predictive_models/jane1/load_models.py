@@ -48,6 +48,21 @@ def load_train_df(stop=None):
     return df
 
 
+def take_currencies_from_df_columns(df):
+    columns = []
+    for column in list(df.columns):
+        if "close_price" not in column:
+            break
+        columns.append(column)
+    res = []
+    for column in columns:
+        sc = column.split("_")
+        curr = sc[-3]
+        if not curr in res:
+            res.append(curr)
+    return res
+
+
 def resort_columns(learning_df, df_to_sort):
     df = df_to_sort.reindex(learning_df.columns, axis=1)
     return df

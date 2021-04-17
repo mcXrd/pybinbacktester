@@ -81,7 +81,7 @@ def add_hyperfeatures_to_df(df):
     return df[300:]
 
 
-def add_forecasts_to_df(df):
+def add_forecasts_to_df(df, live):
     original_columns = list(df.columns)
     close_price_columns = [x for x in original_columns if x.endswith("_close_price")]
 
@@ -98,9 +98,13 @@ def add_forecasts_to_df(df):
         df[trade_in_1h] = df.shift(-1)[c] / df[c] - 1
         df[trade_in_2h] = df.shift(-2)[c] / df[c] - 1
         df[trade_in_3h] = df.shift(-3)[c] / df[c] - 1
+    if live:
+        return df
     return df[:-3]
 
 
-def create_dataframe(input_queryset: django.db.models.query.QuerySet) -> pd.DataFrame:
+def create_dataframe(
+    input_queryset: django.db.models.query.QuerySet, live=False
+) -> pd.DataFrame:
     df = create_base_dataframe(input_queryset)
-    return add_forecasts_to_df(add_hyperfeatures_to_df(df))
+    return add_forecasts_to_df(add_hyperfeatures_to_df(df), live=live)

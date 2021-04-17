@@ -170,6 +170,17 @@ USDT_FUTURES_PAIRS = [
     "LTCUSDT",
 ]
 
+USDT_FUTURES_MINIMAL_TRADE_AMOUNT = {
+    "BTCUSDT": 0.001,
+    "ETHUSDT": 0.001,
+    "BNBUSDT": 0.01,
+    "ADAUSDT": 1,
+    "LINKUSDT": 0.01,
+    "BCHUSDT": 0.001,
+    "XRPUSDT": 0.1,
+    "LTCUSDT": 0.001,
+}
+
 
 FEE_CURRENCY = "BNB"
 EXCHANGE_FUTURES = "usdtfutures"

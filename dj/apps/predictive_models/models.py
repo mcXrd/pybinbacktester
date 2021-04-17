@@ -51,9 +51,13 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         close_price = price_result[-1].close
         return float(close_price), std
 
-    def get_current_fee_currency_balance(self):
+    def get_account_information(self):
         request_client = self.get_request_client()
         result = request_client.get_account_information()
+        return result
+
+    def get_current_fee_currency_balance(self):
+        result = self.get_account_information()
         balance = None
         for asset in result.assets:
             if asset.asset == settings.FEE_CURRENCY:
@@ -172,6 +176,13 @@ class PositionLog(models.Model):
         self.save()
 
 
+class CronLog(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    log_message = models.TextField(null=True, blank=True)
+    log_json = models.JSONField(null=True, blank=True)
+    name = models.CharField(null=True, blank=True, max_length=200)
+
+
 class Position(models.Model):
 
     """
@@ -191,6 +202,7 @@ class Position(models.Model):
     side = models.CharField(
         null=False, blank=False, max_length=20, choices=SIDE_CHOICES
     )
+    liquidation_being_processed = models.BooleanField(default=False)
     liquidated = models.BooleanField(default=False)
     start_to_open = models.DateTimeField(null=True, blank=True)
     open_finished = models.DateTimeField(null=True, blank=True)
@@ -222,6 +234,8 @@ class Position(models.Model):
             raise Exception("Position is not even opened yet.")
         if self.liquidated:
             raise Exception("Already liquidated.")
+        self.liquidation_being_processed = True
+        self.save()
         try:
             self.start_to_liquidate = now()
             side = self.reverse_side(self.side)

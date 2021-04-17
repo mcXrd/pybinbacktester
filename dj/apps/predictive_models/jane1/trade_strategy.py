@@ -46,6 +46,10 @@ class MeanStrategy(Strategy):
         max_index = self._get_max_index(model_output)
         return abs(model_output[max_index]) > 0.01
 
+    def do_trade_explanation(self, model_output: pd.Series):
+        max_index = self._get_max_index(model_output)
+        return str(abs(model_output[max_index]))
+
     def do_skip(self) -> bool:
         to_skip = 1  # 0 is for 1h ; 1 is for 2h ; 2 is for 3h
         try:
