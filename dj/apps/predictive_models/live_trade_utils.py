@@ -11,6 +11,7 @@ from apps.predictive_models.jane1.load_models import (
 from apps.market_data.generate_market_data_hdf_utils import (
     exchangify_pairs,
     create_dataframe,
+    clean_initial_window_nans,
 )
 from apps.market_data.models import Kline
 from django.utils import timezone
@@ -31,11 +32,14 @@ def create_live_df(days: int = 25, live: bool = True) -> Tuple[pd.DataFrame, Lis
     train_df, last_scaler = preprocessing_scale_df(train_df, None)
     currencies = take_currencies_from_df_columns(train_df)
     symbols = exchangify_pairs(currencies)
+
+    safe_day_add = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
     kwargs = {
-        "open_time__gt": timezone.now() - timezone.timedelta(days=days),
+        "close_time__gt": timezone.now() - timezone.timedelta(days=days + safe_day_add),
         "symbol__in": symbols,
     }
     df = create_dataframe(Kline.objects.filter(**kwargs), live=live)
+    df = clean_initial_window_nans(df, rows_to_clean=len(df) - (days * 24))
     df = df.fillna(0)
     df = resort_columns(train_df, df)
     df, last_scaler = preprocessing_scale_df(df, last_scaler)

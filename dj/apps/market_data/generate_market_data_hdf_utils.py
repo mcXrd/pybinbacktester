@@ -65,6 +65,7 @@ def add_hyperfeatures_to_df(df):
         df["{}_ewm_std".format(c)] = df[c].ewm(com=0.5).std()
         df["{}_ewm_cov".format(c)] = df[c].ewm(com=0.5).cov()
         windows = [2, 8, 32, 128]
+        assert max(windows) < settings.LARGEST_DF_WINDOW
         for base_size in windows:
             df["{}_mean_{}".format(c, base_size)] = (
                 df[c].rolling(window=base_size).mean()
@@ -78,7 +79,7 @@ def add_hyperfeatures_to_df(df):
             df["{}_std_{}".format(c, base_size)] = df[c].rolling(window=base_size).std()
             df["{}_cov_{}".format(c, base_size)] = df[c].rolling(window=base_size).cov()
 
-    return df[300:]
+    return df
 
 
 def add_forecasts_to_df(df, live):
@@ -107,4 +108,10 @@ def create_dataframe(
     input_queryset: django.db.models.query.QuerySet, live=False
 ) -> pd.DataFrame:
     df = create_base_dataframe(input_queryset)
-    return add_forecasts_to_df(add_hyperfeatures_to_df(df), live=live)
+    df = add_hyperfeatures_to_df(df)
+    df = add_forecasts_to_df(df, live=live)
+    return df
+
+
+def clean_initial_window_nans(df, rows_to_clean=None):
+    return df[rows_to_clean or settings.LARGEST_DF_WINDOW :]

@@ -19,6 +19,7 @@ from apps.predictive_models.live_trade_utils import (
     get_numpy_model_output,
     resolve_trade,
 )
+import datetime
 
 
 class PytorchTestCase(TestCase):
@@ -120,13 +121,14 @@ class ModelPerformanceTestCase(TestCase):
         self._predict_from_train_df(days=7, revenue=1.1)
 
 
-class ModelPerformanceLiveDataTestCase(ModelPerformanceTestCase):
+class ModelPerformanceLiveDataTestCase(TestCase):
 
-    JANE1_PAIRS = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT"]
-    DAYS = 50
-    TIME_INTERVAL = "{} days ago UTC".format(DAYS)
+    TEST_CASE_PLUS_30_DAYS = 90
+    TIME_INTERVAL = "{} days ago UTC".format(TEST_CASE_PLUS_30_DAYS)
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         if Kline.objects.count() == 0:
             call_command(
                 "sync_klines",
@@ -134,19 +136,61 @@ class ModelPerformanceLiveDataTestCase(ModelPerformanceTestCase):
                 time_interval=ModelPerformanceLiveDataTestCase.TIME_INTERVAL,
             )  # max_workers needs to be 1 for tests
 
-    def test_last_month(self):
-        df, currencies = create_live_df(
-            ModelPerformanceLiveDataTestCase.DAYS, live=False
+        pair_count = len(settings.USDT_FUTURES_PAIRS)
+        exchange_count = 2
+        count_in_db = Kline.objects.count()
+        expected_count = cls.TEST_CASE_PLUS_30_DAYS * 24 * exchange_count * pair_count
+        assert abs(abs(count_in_db) - abs(expected_count)) < 100
+
+    def template_is_create_live_df_ordered(self, days, live=False):
+        df, currencies = create_live_df(days, live=live)
+        last_close_time = None
+        for i in range(len(df)):
+            feature_row, real_output = get_feature_row_and_real_output(df, i)
+            close_time = feature_row.name.to_pydatetime()
+            if last_close_time is None:
+                last_close_time = close_time
+                continue
+
+            self.assertLess(last_close_time, close_time)
+            self.assertEqual(close_time - last_close_time, datetime.timedelta(hours=1))
+            last_close_time = close_time
+
+    def test_is_create_live_df_ordered_60(self):
+        self.template_is_create_live_df_ordered(60)
+
+    def test_is_create_live_df_ordered_30(self):
+        self.template_is_create_live_df_ordered(30)
+
+    def test_is_create_live_df_ordered_30_live(self):
+        self.template_is_create_live_df_ordered(30, live=True)
+
+    def test_is_last_close_time_actual(self):
+        df, currencies = create_live_df(3, live=True)
+        feature_row, real_output = get_feature_row_and_real_output(df, len(df) - 1)
+        close_time = feature_row.name.to_pydatetime()
+        self.assertLess(
+            now() - close_time, datetime.timedelta(minutes=now().minute + 1)
         )
+
+    def test_is_create_live_df_ordered_7(self):
+        self.template_is_create_live_df_ordered(7)
+
+    def test_is_create_live_df_ordered_7_live(self):
+        self.template_is_create_live_df_ordered(7, live=True)
+
+    def template_n_days_test(self, days=30, revenue=1.01):
+        assert self.TEST_CASE_PLUS_30_DAYS > days + 29
+        df, currencies = create_live_df(days + 20, live=False)
 
         trade_strategy = MeanStrategy()
         trade_session = TradeSession(initial_value=400000, rake=0.00018)
         trade_skipped = 0
 
-        for i in range(len(df) - 3):
+        for i in range(len(df)):
             if trade_strategy.do_skip():
                 continue
-            if i < len(df) - (30 * 24):
+            if i < len(df) - (days * 24):
                 continue
             feature_row, real_output = get_feature_row_and_real_output(df, i)
             model_input = get_model_input(feature_row)
@@ -158,7 +202,7 @@ class ModelPerformanceLiveDataTestCase(ModelPerformanceTestCase):
                 true_change_index = trade_strategy.pick_true_change_index(
                     numpy_model_output
                 )
-                test_true_change_percentage = real_output[true_change_index]
+                df_true_change_percentage = real_output[true_change_index]
 
                 currency = trade_strategy.pick_currency(numpy_model_output, currencies)
                 considered_side = trade_strategy.pick_side(numpy_model_output)
@@ -173,23 +217,56 @@ class ModelPerformanceLiveDataTestCase(ModelPerformanceTestCase):
                     symbol=settings.EXCHANGE_FUTURES + "_" + currency,
                     close_time=close_time,
                 )
-                one_hour_kline = current_kline.get_kline_shifted_forward(2)
+                try:
+                    one_hour_kline = current_kline.get_kline_shifted_forward(2)
+                except Kline.DoesNotExist:
+                    id1 = one_hour_kline.id
+                    id2 = Kline.objects.order_by("-close_time").first()
+                    id3 = Kline.objects.order_by("-close_time").last()
+                    raise Exception("{} - {} - {}".format(id1, id2, id3))
+
+                self.assertLess(current_kline.id, one_hour_kline.id)
+
                 true_change_percentage = (
                     one_hour_kline.close_price / current_kline.close_price
                 ) - 1
-                self.assertEqual(test_true_change_percentage, true_change_percentage)
+                msg = "{} - {} - {}".format(
+                    one_hour_kline.close_price,
+                    current_kline.close_price,
+                    str(df.iloc[i, :]),
+                )
+                self.assertEqual(
+                    df_true_change_percentage, true_change_percentage, msg=msg
+                )
                 trade_session.trade(true_change_percentage, considered_side)
             else:
                 trade_skipped += 1
 
         print(
-            "trades skipped: {}".format(
+            "Live trades skipped: {}".format(
                 trade_skipped / (trade_session.trades + trade_skipped)
             )
         )
         print(
-            "Trade result after {} trades: {}".format(
+            "Live Trade result after {} trades: {}".format(
                 trade_session.trades, trade_session.current_value
             )
         )
-        assert trade_session.initial_value * 1.375 < trade_session.current_value
+        self.assertLess(
+            trade_session.initial_value * revenue, trade_session.current_value
+        )
+
+    def test_live_60_days(self):
+        self.template_n_days_test(days=60, revenue=2.0)
+
+    def test_live_30_days(self):
+        self.template_n_days_test(days=30, revenue=1.3)
+
+    def test_live_14_days(self):
+        self.template_n_days_test(days=14, revenue=1.1)
+
+    def test_live_7_days(self):
+        self.template_n_days_test(days=7, revenue=0.92)
+
+    def test_live_2_days(self):
+        self.template_n_days_test(days=2, revenue=0.88)

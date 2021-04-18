@@ -40,7 +40,7 @@ def main():
     currencies = take_currencies_from_df_columns(train_df)
     symbols = exchangify_pairs(currencies)
     kwargs = {
-        "open_time__gt": timezone.now() - timezone.timedelta(days=15),
+        "close_time__gt": timezone.now() - timezone.timedelta(days=15),
         "symbol__in": symbols,
     }
     df = create_dataframe(Kline.objects.filter(**kwargs))

@@ -46,18 +46,16 @@ def get_usdt_futures_klines(symbol: str, time_interval: str) -> List[List]:
 
 def insert_klines(symbol: str, get_klines: Callable, exchange: str, time_interval: str):
     klines = get_klines(symbol, time_interval)
-    latest_kline = (
-        Kline.objects.order_by("open_time")
-        .filter(symbol=exchange + "_" + symbol)
-        .last()
-    )
     bulk_klines = []
+    complete_symbol = exchange + "_" + symbol
+
     for kline in klines:
         open_time = binance_timestamp_to_utc_datetime(kline[0])
-        if latest_kline and open_time <= latest_kline.open_time:
+        close_time = binance_timestamp_to_utc_datetime(kline[6])
+
+        if Kline.objects.filter(symbol=complete_symbol, close_time=close_time).exists():
             continue
 
-        close_time = binance_timestamp_to_utc_datetime(kline[6])
         kline_fields = {
             "open_time": open_time,
             "open_price": kline[1],
@@ -80,7 +78,7 @@ def insert_klines(symbol: str, get_klines: Callable, exchange: str, time_interva
 
 
 def remove_too_old_klines(days=1):
-    Kline.objects.filter(open_time__lte=timezone.now() - timedelta(days=days)).delete()
+    Kline.objects.filter(close_time__lte=timezone.now() - timedelta(days=days)).delete()
 
 
 def main(max_workers=6, time_interval=None):
@@ -122,7 +120,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--max-workers", type=int, required=False)
-        parser.add_argument("--time-interval", type=str, required=False, default=TIME_INTERVAL)
+        parser.add_argument(
+            "--time-interval", type=str, required=False, default=TIME_INTERVAL
+        )
 
     def handle(self, *args, **kwargs):
         start_time = timezone.now()

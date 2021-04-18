@@ -12,6 +12,7 @@ from apps.market_data.models import Kline
 from apps.market_data.generate_market_data_hdf_utils import (
     exchangify_pairs,
     create_dataframe,
+    clean_initial_window_nans,
 )
 
 
@@ -34,7 +35,7 @@ def fetch_input(
     if time_interval is None:
         return Kline.objects.filter(**kwargs)
     qs = Kline.objects.filter(
-        open_time__gte=time_interval[0], open_time__lte=time_interval[1], **kwargs
+        close_time__gte=time_interval[0], close_time__lte=time_interval[1], **kwargs
     )
     return qs
 
@@ -67,10 +68,11 @@ class Command(BaseCommand):
             nargs="+",
             type=str,
             required=False,
-            help="'BTCUSDT' 'ETHUSDT' 'BNBUSDT' 'ADAUSDT'",
+            help="'BTCUSDT' 'ETHUSDT' 'BNBUSDT' 'ADAUSDT' 'XRPUSDT'",
         )
 
     def handle(self, *args, **kwargs):
         qs = fetch_input(kwargs["time_interval"], kwargs["pairs"])
         output_df = create_dataframe(qs)
+        output_df = clean_initial_window_nans(output_df)
         save_output(output_df, kwargs["hdf_filename"])

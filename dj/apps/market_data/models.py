@@ -18,7 +18,7 @@ class Kline(models.Model):
     low_price = models.FloatField(null=False, blank=False)
     close_price = models.FloatField(null=False, blank=False)
     volume = models.FloatField(null=False, blank=False)
-    close_time = models.DateTimeField(null=False, blank=False)
+    close_time = models.DateTimeField(null=False, blank=False, db_index=True)
     quota_asset_volume = models.FloatField(null=False, blank=False)
     number_of_trades = models.IntegerField(null=False, blank=False)
     taker_buy_base_asset_volume = models.FloatField(null=False, blank=False)
