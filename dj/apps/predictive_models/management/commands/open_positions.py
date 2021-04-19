@@ -19,7 +19,7 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-LIMIT_TO_START_TRADE = 59  # in minutes - 60 is effective maximum
+LIMIT_TO_START_TRADE = 8  # in minutes - 60 is effective maximum
 
 
 def main():

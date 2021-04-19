@@ -122,7 +122,7 @@ class ModelPerformanceTestCase(TestCase):
 
 class ModelPerformanceLiveDataTestCase(TestCase):
 
-    TEST_CASE_PLUS_30_DAYS = 9
+    TEST_CASE_PLUS_30_DAYS = 90
     TIME_INTERVAL = "{} days ago UTC".format(TEST_CASE_PLUS_30_DAYS)
 
     @classmethod
@@ -152,7 +152,7 @@ class ModelPerformanceLiveDataTestCase(TestCase):
                 continue
 
             self.assertLess(last_close_time, close_time)
-            self.assertEqual(close_time - last_close_time, datetime.timedelta(hours=1))
+            self.assertEqual(close_time - last_close_time, timedelta(hours=1))
             last_close_time = close_time
 
     def test_is_create_live_df_ordered_60(self):
@@ -166,7 +166,7 @@ class ModelPerformanceLiveDataTestCase(TestCase):
 
     def test_is_last_close_time_actual(self):
         df, currencies = create_live_df(3, live=True)
-        feature_row, real_output = get_feature_row_and_real_output(df, len(df) - 1)
+        feature_row, real_output = get_feature_row_and_real_output(df, len(df) - 2)
         close_time = feature_row.name.to_pydatetime()
         self.assertLess(timedelta(minutes=0), now() - close_time)
         self.assertLess(now() - close_time, timedelta(minutes=now().minute + 1))
