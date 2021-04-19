@@ -5,7 +5,6 @@ from apps.predictive_models.jane1.load_models import (
     load_train_df,
 )
 from apps.predictive_models.models import Position
-from django.utils.timezone import now
 from apps.market_data.models import Kline
 from django.core.management import call_command
 from apps.predictive_models.jane1.load_models import preprocessing_scale_df
@@ -19,7 +18,7 @@ from apps.predictive_models.live_trade_utils import (
     get_numpy_model_output,
     resolve_trade,
 )
-import datetime
+from django.utils.timezone import now, timedelta
 
 
 class PytorchTestCase(TestCase):
@@ -115,15 +114,15 @@ class ModelPerformanceTestCase(TestCase):
         self._predict_from_train_df(days=30, revenue=1.375)
 
     def test_predict_from_train_df_14d(self):
-        self._predict_from_train_df(days=14, revenue=1.1)
+        self._predict_from_train_df(days=14, revenue=1.0)
 
     def test_predict_from_train_df_7d(self):
-        self._predict_from_train_df(days=7, revenue=1.1)
+        self._predict_from_train_df(days=7, revenue=0.87)
 
 
 class ModelPerformanceLiveDataTestCase(TestCase):
 
-    TEST_CASE_PLUS_30_DAYS = 90
+    TEST_CASE_PLUS_30_DAYS = 9
     TIME_INTERVAL = "{} days ago UTC".format(TEST_CASE_PLUS_30_DAYS)
 
     @classmethod
@@ -169,9 +168,8 @@ class ModelPerformanceLiveDataTestCase(TestCase):
         df, currencies = create_live_df(3, live=True)
         feature_row, real_output = get_feature_row_and_real_output(df, len(df) - 1)
         close_time = feature_row.name.to_pydatetime()
-        self.assertLess(
-            now() - close_time, datetime.timedelta(minutes=now().minute + 1)
-        )
+        self.assertLess(timedelta(minutes=0), now() - close_time)
+        self.assertLess(now() - close_time, timedelta(minutes=now().minute + 1))
 
     def test_is_create_live_df_ordered_7(self):
         self.template_is_create_live_df_ordered(7)
@@ -253,7 +251,11 @@ class ModelPerformanceLiveDataTestCase(TestCase):
             )
         )
         self.assertLess(
-            trade_session.initial_value * revenue, trade_session.current_value
+            trade_session.initial_value * revenue,
+            trade_session.current_value,
+            msg="{} days test - after trade value {}".format(
+                days, trade_session.current_value
+            ),
         )
 
     def test_live_60_days(self):
@@ -270,3 +272,6 @@ class ModelPerformanceLiveDataTestCase(TestCase):
 
     def test_live_2_days(self):
         self.template_n_days_test(days=2, revenue=0.88)
+
+    def test_live_1_days(self):
+        self.template_n_days_test(days=1, revenue=0.88)

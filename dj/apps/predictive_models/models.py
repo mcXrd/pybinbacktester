@@ -36,7 +36,8 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         )
         return float(price_result[0].close)
 
-    def get_current_close_price_and_std(self, request_client, symbol):
+    def get_current_close_price_and_std(self, symbol):
+        request_client = self.get_request_client()
         price_result = request_client.get_candlestick_data(
             symbol=symbol,
             interval=CandlestickInterval.MIN1,
@@ -54,6 +55,11 @@ class TradeInterfaceBinanceFutures(TradeInterface):
     def get_account_information(self):
         request_client = self.get_request_client()
         result = request_client.get_account_information()
+        return result
+
+    def change_initial_leverage(self, symbol, leverage):
+        request_client = self.get_request_client()
+        result = request_client.change_initial_leverage(symbol, leverage)
         return result
 
     def get_current_fee_currency_balance(self):
@@ -116,9 +122,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             if not position.alive:
                 raise Exception("Executing position which is not alive")
             retries += 1
-            price, std = self.get_current_close_price_and_std(
-                request_client, position.base_symbol
-            )
+            price, std = self.get_current_close_price_and_std(position.base_symbol)
             if retries > 50:
                 noised_price = self.add_noise_to_price(price, std)
             else:
@@ -136,7 +140,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                     side=side,
                     ordertype=OrderType.LIMIT,
                     price=noised_price,
-                    quantity=round(float(position.quantity), 5),
+                    quantity=str(position.quantity),
                     timeInForce=TimeInForce.GTC,
                 )
             except Exception as e:
@@ -222,6 +226,7 @@ class Position(models.Model):
     liq_fee_currency_price = models.FloatField(null=True, blank=True)
 
     alive = models.BooleanField(default=True)
+    fee_tier = models.CharField(null=True, blank=True, max_length=100)
 
     @staticmethod
     def reverse_side(side):

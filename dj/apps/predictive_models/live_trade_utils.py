@@ -26,6 +26,8 @@ import numpy as np
 from functools import lru_cache
 from django.conf import settings
 
+SAFE_DAY_ADD = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
+
 
 def create_live_df(days: int = 25, live: bool = True) -> Tuple[pd.DataFrame, List[str]]:
     train_df = load_train_df()
@@ -33,9 +35,8 @@ def create_live_df(days: int = 25, live: bool = True) -> Tuple[pd.DataFrame, Lis
     currencies = take_currencies_from_df_columns(train_df)
     symbols = exchangify_pairs(currencies)
 
-    safe_day_add = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
     kwargs = {
-        "close_time__gt": timezone.now() - timezone.timedelta(days=days + safe_day_add),
+        "close_time__gt": timezone.now() - timezone.timedelta(days=days + SAFE_DAY_ADD),
         "symbol__in": symbols,
     }
     df = create_dataframe(Kline.objects.filter(**kwargs), live=live)
@@ -102,3 +103,20 @@ def resolve_trade(df, df_index, trade_strategy, currencies):
         raise NoTradeException(trade_strategy.do_trade_explanation(numpy_model_output))
 
     return currency, side
+
+
+def round_quantity(considered_quantity, symbol):
+    considered_quantity = (
+        considered_quantity / settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[symbol]
+    )
+    considered_quantity = int(considered_quantity)
+    considered_quantity = (
+        considered_quantity * settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[symbol]
+    )
+    return considered_quantity
+
+
+def count_quantity(symbol, price, usdt_amount):
+    considered_quantity = (usdt_amount * 0.95) / price
+    considered_quantity = round_quantity(considered_quantity, symbol)
+    return considered_quantity

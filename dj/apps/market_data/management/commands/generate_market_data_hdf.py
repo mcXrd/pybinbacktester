@@ -73,6 +73,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         qs = fetch_input(kwargs["time_interval"], kwargs["pairs"])
-        output_df = create_dataframe(qs)
+        output_df = create_dataframe(qs, live=True)
         output_df = clean_initial_window_nans(output_df)
         save_output(output_df, kwargs["hdf_filename"])

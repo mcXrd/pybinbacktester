@@ -100,7 +100,7 @@ def create_predict_model(JaneStreetDatasetPredict_Y_LEN):
     return get_core_model(
         ENCODED_FEATURES_COUNT,
         JaneStreetDatasetPredict_Y_LEN,
-        hidden_count=3,
+        hidden_count=5,
         dropout_p=0.5,
         net_width=3000,
         activation=torch.nn.ELU,

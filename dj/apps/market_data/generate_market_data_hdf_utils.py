@@ -101,7 +101,7 @@ def add_forecasts_to_df(df, live):
         df[trade_in_3h] = df.shift(-3)[c] / df[c] - 1
     if live:
         return df
-    return df[:-3]
+    return df[:-4]  # the latest one is incomplete
 
 
 def create_dataframe(
