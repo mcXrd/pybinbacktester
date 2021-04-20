@@ -15,11 +15,10 @@ from apps.predictive_models.live_trade_utils import (
 )
 from apps.predictive_models.live_trade_utils import NoTradeException
 from apps.predictive_models.models import TradeInterfaceBinanceFutures
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-LIMIT_TO_START_TRADE = 8  # in minutes - 60 is effective maximum
+LIMIT_TO_START_TRADE = 59  # in minutes - 60 is effective maximum
 
 
 def main():
@@ -74,7 +73,7 @@ def main():
             if asset.asset == "USDT":
                 usdt_assset = asset
         usdt_amount = usdt_assset.marginBalance
-        price, std = trade_interface.get_current_close_price_and_std(symbol)
+        price, std, round_to_places = trade_interface.get_current_close_price_and_std(symbol)
         considered_quantity = count_quantity(symbol, price, usdt_amount)
         positon = Position.objects.create(
             symbol="usdtfutures_" + symbol,

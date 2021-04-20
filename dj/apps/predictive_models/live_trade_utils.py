@@ -25,6 +25,7 @@ import torch
 import numpy as np
 from functools import lru_cache
 from django.conf import settings
+from decimal import Decimal
 
 SAFE_DAY_ADD = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
 
@@ -105,18 +106,18 @@ def resolve_trade(df, df_index, trade_strategy, currencies):
     return currency, side
 
 
-def round_quantity(considered_quantity, symbol):
-    considered_quantity = (
-        considered_quantity / settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[symbol]
-    )
-    considered_quantity = int(considered_quantity)
-    considered_quantity = (
-        considered_quantity * settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[symbol]
-    )
+def round_price(price: float, symbol: str) -> Decimal:
+    pass
+
+
+def round_quantity(considered_quantity: float, symbol: str) -> Decimal:
+    decimal_places = settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[symbol][1]
+    considered_quantity = Decimal(considered_quantity)
+    considered_quantity = round(considered_quantity, decimal_places)
     return considered_quantity
 
 
-def count_quantity(symbol, price, usdt_amount):
+def count_quantity(symbol: str, price: float, usdt_amount: float) -> Decimal:
     considered_quantity = (usdt_amount * 0.95) / price
     considered_quantity = round_quantity(considered_quantity, symbol)
     return considered_quantity

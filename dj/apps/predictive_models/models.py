@@ -6,6 +6,8 @@ from binance_f import RequestClient
 import time
 import numpy as np
 from django.utils.timezone import now
+from decimal import Decimal
+from typing import Tuple
 
 
 class TradeInterface:
@@ -36,7 +38,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         )
         return float(price_result[0].close)
 
-    def get_current_close_price_and_std(self, symbol):
+    def get_current_close_price_and_std(self, symbol) -> Tuple[float, float, int]:
         request_client = self.get_request_client()
         price_result = request_client.get_candlestick_data(
             symbol=symbol,
@@ -50,7 +52,8 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             [float(price_result[0].close), float(price_result[-1].close)], ddof=1
         )
         close_price = price_result[-1].close
-        return float(close_price), std
+        round_to_places = len(str(close_price))
+        return float(close_price), std, round_to_places
 
     def get_account_information(self):
         request_client = self.get_request_client()
@@ -122,12 +125,14 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             if not position.alive:
                 raise Exception("Executing position which is not alive")
             retries += 1
-            price, std = self.get_current_close_price_and_std(position.base_symbol)
+            price, std, round_to_places = self.get_current_close_price_and_std(
+                position.base_symbol
+            )
             if retries > 50:
                 noised_price = self.add_noise_to_price(price, std)
             else:
                 noised_price = price
-            noised_price = round(noised_price, 5)
+            noised_price = round(Decimal(noised_price), round_to_places)
             msg = "Price: {} ; Noised price {} ; STD: {} ; retries: {} ;".format(
                 price, noised_price, std, retries
             )
@@ -181,6 +186,13 @@ class PositionLog(models.Model):
 
 
 class CronLog(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    log_message = models.TextField(null=True, blank=True)
+    log_json = models.JSONField(null=True, blank=True)
+    name = models.CharField(null=True, blank=True, max_length=200)
+
+
+class AlertLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     log_message = models.TextField(null=True, blank=True)
     log_json = models.JSONField(null=True, blank=True)

@@ -17,6 +17,10 @@ def main():
             call_command("open_positions")
             time.sleep(6)
 
+        if currenct_second > 25 and currenct_second < 30:
+            call_command("delete_blowing_logs")
+            time.sleep(6)
+
 
 class Command(BaseCommand):
     help = "Liquidate positions"
