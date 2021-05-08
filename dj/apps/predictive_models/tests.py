@@ -19,6 +19,7 @@ from apps.predictive_models.live_trade_utils import (
     resolve_trade,
 )
 from django.utils.timezone import now, timedelta
+from apps.predictive_models.jane1.load_models import take_currencies_from_df_columns
 
 
 class PytorchTestCase(TestCase):
@@ -68,9 +69,11 @@ class ModelPerformanceTestCase(TestCase):
     def _predict_from_train_df(self, days=30, revenue=1.375):
         df = load_train_df()
         df, last_min_max_scaler = preprocessing_scale_df(df, None)
+        currencies = take_currencies_from_df_columns(df)
         trade_strategy = MeanStrategy()
         trade_session = TradeSession(initial_value=400000, rake=0.00018)
         trade_skipped = 0
+        trades_dict = {}
         for i in range(len(df) - 3):
             if trade_strategy.do_skip():
                 continue
@@ -87,6 +90,13 @@ class ModelPerformanceTestCase(TestCase):
                 )
                 true_change_percentage = real_output[true_change_index]
                 considered_side = trade_strategy.pick_side(numpy_model_output)
+                currency = trade_strategy.pick_currency(numpy_model_output, currencies)
+                dd = "{}_{}".format(currency, considered_side)
+                if trades_dict.get(dd) is None:
+                    trades_dict[dd] = 1
+                else:
+                    trades_dict[dd] += 1
+
                 trade_session.trade(true_change_percentage, considered_side)
             else:
                 trade_skipped += 1
@@ -102,6 +112,7 @@ class ModelPerformanceTestCase(TestCase):
                 trade_session.trades, trade_session.current_value
             )
         )
+        print("Trades dict {}".format(trades_dict))
         assert trade_session.initial_value * revenue < trade_session.current_value
 
     def test_predict_from_train_df_90d(self):
@@ -179,12 +190,13 @@ class ModelPerformanceLiveDataTestCase(TestCase):
 
     def template_n_days_test(self, days=30, revenue=1.01):
         assert self.TEST_CASE_PLUS_30_DAYS > days + 29
-        df, currencies = create_live_df(days + 20, live=False)
+        df, currencies = create_live_df(days, live=False)
 
         trade_strategy = MeanStrategy()
         trade_session = TradeSession(initial_value=400000, rake=0.00018)
         trade_skipped = 0
 
+        trades_dict = {}
         for i in range(len(df)):
             if trade_strategy.do_skip():
                 continue
@@ -195,7 +207,6 @@ class ModelPerformanceLiveDataTestCase(TestCase):
             model_output = get_model_output(model_input)
             numpy_model_output = get_numpy_model_output(model_output)
             close_time = feature_row.name.to_pydatetime()
-
             if trade_strategy.do_trade(numpy_model_output):
                 true_change_index = trade_strategy.pick_true_change_index(
                     numpy_model_output
@@ -204,6 +215,12 @@ class ModelPerformanceLiveDataTestCase(TestCase):
 
                 currency = trade_strategy.pick_currency(numpy_model_output, currencies)
                 considered_side = trade_strategy.pick_side(numpy_model_output)
+
+                dd = "{}_{}".format(currency, considered_side)
+                if trades_dict.get(dd) is None:
+                    trades_dict[dd] = 1
+                else:
+                    trades_dict[dd] += 1
 
                 resolved_currency, resolved_side = resolve_trade(
                     df, i, trade_strategy, currencies
@@ -250,6 +267,7 @@ class ModelPerformanceLiveDataTestCase(TestCase):
                 trade_session.trades, trade_session.current_value
             )
         )
+        print("Trades dict {}".format(trades_dict))
         self.assertLess(
             trade_session.initial_value * revenue,
             trade_session.current_value,

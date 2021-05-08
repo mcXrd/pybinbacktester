@@ -19,8 +19,10 @@ class MeanStrategy(Strategy):
         buff = []
         means = []
         for one in model_output:
-            if len(buff) < 3:
+            if len(buff) < 4:
                 buff.append(one)
+                if len(buff) == 2:
+                    buff.append(one)
             else:
                 means.append(np.mean(np.array(buff)))
                 buff = []
@@ -39,8 +41,8 @@ class MeanStrategy(Strategy):
         return max_index * 3 + 1
 
     def pick_side(self, model_output: pd.Series) -> int:
-        max_index = self._get_max_index(model_output)
-        return 1 if model_output[max_index] > 0 else -1
+        true_change_index = self.pick_true_change_index(model_output)
+        return 1 if model_output[true_change_index] > 0 else -1
 
     def do_trade(self, model_output: pd.Series):
         max_index = self._get_max_index(model_output)

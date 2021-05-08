@@ -1,7 +1,7 @@
 import torch
 from typing import Callable
 
-ENCODED_FEATURES_COUNT = 200
+ENCODED_FEATURES_COUNT = 100
 
 
 def generate_settings_from_df(df):
@@ -77,21 +77,22 @@ class autoencoder(torch.nn.Module):
             bottleneck,
             1,
             dropout_p=0.5,
-            net_width=2000,
-            activation=torch.nn.ELU
+            net_width=3000,
+            activation=torch.nn.ELU,
         )
         self.decoder = get_core_model(
             bottleneck,
             output_size,
             1,
             dropout_p=0.5,
-            net_width=2000,
+            net_width=3000,
             activation=torch.nn.ELU,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.encoder(x)
         x = torch.sigmoid_(x)
+        x = torch.nn.Dropout(p=0.04)(x)
         x = self.decoder(x)
         return x
 
@@ -100,7 +101,7 @@ def create_predict_model(JaneStreetDatasetPredict_Y_LEN):
     return get_core_model(
         ENCODED_FEATURES_COUNT,
         JaneStreetDatasetPredict_Y_LEN,
-        hidden_count=5,
+        hidden_count=3,
         dropout_p=0.5,
         net_width=3000,
         activation=torch.nn.ELU,
