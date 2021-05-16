@@ -88,7 +88,9 @@ def remove_too_old_klines(days=1):
     Kline.objects.filter(close_time__lte=timezone.now() - timedelta(days=days)).delete()
 
 
-def main(max_workers=1, time_interval=None, coins=None):
+def main(
+    max_workers=1, time_interval=None, coins=None, use_spot=False, use_futures=True
+):
     binance_client = BinanceClient(
         settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY
     )
@@ -104,22 +106,22 @@ def main(max_workers=1, time_interval=None, coins=None):
     futures = {}
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         for ticker_symbol in key_currencies:
-            futures[EXCHANGE_SPOT + ticker_symbol] = executor.submit(
-                insert_klines,
-                ticker_symbol,
-                get_spot_klines,
-                EXCHANGE_SPOT,
-                time_interval,
-            )
-            futures[EXCHANGE_FUTURES + ticker_symbol] = executor.submit(
-                insert_klines,
-                ticker_symbol,
-                get_usdt_futures_klines,
-                EXCHANGE_FUTURES,
-                time_interval,
-            )
+            if use_spot:
+                futures[EXCHANGE_SPOT + ticker_symbol] = executor.submit(
+                    insert_klines,
+                    ticker_symbol,
+                    get_spot_klines,
+                    EXCHANGE_SPOT,
+                    time_interval,
+                )
+            if use_futures:
+                futures[EXCHANGE_FUTURES + ticker_symbol] = executor.submit(
+                    insert_klines,
+                    ticker_symbol,
+                    get_usdt_futures_klines,
+                    EXCHANGE_FUTURES,
+                    time_interval,
+                )
 
     for ticker_symbol in futures:
         futures[ticker_symbol].result()
-
-    # remove_too_old_klines()

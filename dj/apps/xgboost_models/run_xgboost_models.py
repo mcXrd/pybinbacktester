@@ -21,6 +21,28 @@ from apps.xgboost_models.create_hdfs_for_models import (
 
 DAYS_EVAL = 2
 
+model_codes = ["A", "B", "C", "D", "E", "F", "A2", "B2", "C2", "D2", "E2", "F2"]
+hdf_create_functions = [
+    create_A_hdf,
+    create_B_hdf,
+    create_C_hdf,
+    create_D_hdf,
+    create_E_hdf,
+    create_F_hdf,
+    create_A2_hdf,
+    create_B2_hdf,
+    create_C2_hdf,
+    create_D2_hdf,
+    create_E2_hdf,
+    create_F2_hdf,
+]
+assert len(model_codes) == len(hdf_create_functions)
+
+
+def get_X_from_df(df, coin):
+    X = df.loc[:, "usdtfutures_{}USDT_close_price".format(coin) :]
+    return X
+
 
 def simulate(df_orig, coin):
     df_orig = df_orig.fillna(0)
@@ -40,7 +62,7 @@ def simulate(df_orig, coin):
     Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] < 9] = 1
     Y
 
-    X = df_orig.loc[:, "usdtfutures_{}USDT_close_price".format(coin) :]
+    X = get_X_from_df(df_orig, coin)
 
     test_size = DAYS_EVAL / days
     X_train, X_test, Y_train, Y_test = train_test_split(
@@ -109,33 +131,27 @@ def simulate(df_orig, coin):
             initial_bank = initial_bank - rake_change
         last_side = side
 
-    return initial_bank, trading_hours, skipped_hours / trading_hours, hours_in_test
+    return (
+        initial_bank,
+        trading_hours,
+        skipped_hours / trading_hours,
+        hours_in_test,
+        model,
+    )
 
 
 def get_best_model_code():
-    model_codes = ["A", "B", "C", "D", "E", "F", "A2", "B2", "C2", "D2", "E2", "F2"]
-    hdf_create_functions = [
-        create_A_hdf,
-        create_B_hdf,
-        create_C_hdf,
-        create_D_hdf,
-        create_E_hdf,
-        create_F_hdf,
-        create_A2_hdf,
-        create_B2_hdf,
-        create_C2_hdf,
-        create_D2_hdf,
-        create_E2_hdf,
-        create_F2_hdf,
-    ]
-    assert len(model_codes) == len(hdf_create_functions)
 
     results = []
     for i in range(len(model_codes)):
         df, coin = hdf_create_functions[i]()
-        initial_bank, trading_hours, skipped_hours_ratio, hours_in_test = simulate(
-            df, coin
-        )
+        (
+            initial_bank,
+            trading_hours,
+            skipped_hours_ratio,
+            hours_in_test,
+            model,
+        ) = simulate(df, coin)
         results.append(initial_bank)
 
     max_i = np.argmax(results)
