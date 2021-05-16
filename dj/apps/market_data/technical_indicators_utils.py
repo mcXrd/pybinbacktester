@@ -10,12 +10,12 @@ def SMA22(df: pd.DataFrame, window: int, kline_attrs: list, shifts: int):
     return df
 
 
-def SMA(df: pd.DataFrame, window: int, kline_attrs: list, shifts: int):
+def SMA(df: pd.DataFrame, window: int, kline_attrs: list, shifts: int, shift_amount: int):
     for one in kline_attrs:
         nm = "SMA({}_{})".format(one, window)
         df[nm] = df[one].rolling(window).mean()
         for i in range(shifts):
-            df["shift{}_{}".format(i+1, nm)] = df[nm].shift(30)
+            df["shift{}_{}".format(i+1, nm)] = df[nm].shift(shift_amount)
     return df
 
 

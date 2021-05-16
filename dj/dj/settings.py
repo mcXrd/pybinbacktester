@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.market_data.apps.MarketDataConfig",
     "apps.predictive_models.apps.PredictiveModelsConfig",
+    "apps.xgboost_models.apps.XgboostModelsConfig",
 ]
 
 MIDDLEWARE = [

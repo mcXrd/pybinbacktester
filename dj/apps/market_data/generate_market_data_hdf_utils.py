@@ -128,16 +128,23 @@ def add_hyperfeatures_to_df(df):
     return df
 
 
-def get_close_price_columns(df):
+def get_endswithc_column(df, endswith):
     original_columns = list(df.columns)
-    close_price_columns = [x for x in original_columns if x.endswith("_close_price")]
+    close_price_columns = [
+        x for x in original_columns if x.endswith(endswith) and "trade_in" not in x
+    ]
     return close_price_columns
 
 
+def get_close_price_columns(df):
+    return get_endswithc_column(df, "_close_price")
+
+
 def get_volume_columns(df):
-    original_columns = list(df.columns)
-    volume_columns = [x for x in original_columns if x.endswith("_volume")]
-    return volume_columns
+    return get_endswithc_column(df, "_volume")
+
+def get_number_of_trades_columns(df):
+    return get_endswithc_column(df, "_number_of_trades")
 
 
 def add_forecasts_to_df(df, live):
@@ -155,10 +162,11 @@ def add_forecasts_to_df(df, live):
         df.insert(0, trade_in_3h, np.ones(df.shape[0]))
         df[trade_in_1h] = df.shift(-1 * shift)[c] / df[c] - 1
         df[trade_in_2h] = df.shift(-2 * shift)[c] / df[c] - 1
+        df[trade_in_3h] = df.shift(-3 * shift)[c] / df[c] - 1
 
     if live:
         return df
-    return df[:-3*shift]  # the latest one is incomplete
+    return df[: -3 * shift]  # the latest one is incomplete
 
 
 def create_dataframe(
@@ -195,3 +203,9 @@ def create_dataframe_v2(
 
 def clean_initial_window_nans(df, rows_to_clean=None):
     return df[rows_to_clean or settings.LARGEST_DF_WINDOW :]
+
+
+def stationarify_column(df, column_name):
+    df = df.copy()
+    df[column_name] = df[column_name] / df.shift(1)[column_name] - 1
+    return df
