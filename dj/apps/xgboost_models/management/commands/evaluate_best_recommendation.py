@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     last_br = BestRecommendation.objects.last()
-    if not last_br.should_recreate():
+    if last_br and not last_br.should_recreate():
         return
     br = BestRecommendation.objects.create()
     br.start_evaluating = now()
