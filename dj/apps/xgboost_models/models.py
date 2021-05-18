@@ -1,9 +1,10 @@
 from django.db import models
 from apps.xgboost_models.run_xgboost_models import get_best_model_code
-from django.utils.timezone import now
 from apps.xgboost_models.run_xgboost_models import model_codes, hdf_create_functions
 from apps.xgboost_models.run_xgboost_models import simulate
 from apps.xgboost_models.run_xgboost_models import get_X_from_df
+from django.utils.timezone import now, timedelta
+import pandas as pd
 
 # Create your models here.
 
@@ -13,13 +14,23 @@ class BestModelCode(models.Model):
     expected_profit = models.FloatField(null=True, blank=True)
     start_evaluating = models.DateTimeField(null=True, blank=True)
     done_evaluating = models.DateTimeField(null=True, blank=True)
+    mean_const = models.FloatField(null=True, blank=True)
 
     def evaluate(self):
-        code, expected_profit = get_best_model_code()
+        code, expected_profit, mean_const = get_best_model_code()
+        self.mean_const = mean_const
         self.code = code
         self.expected_profit = expected_profit
         self.done_evaluating = now()
         self.save()
+
+    def is_fresh(self):
+        moving = now() - timedelta(minutes=60)
+        return self.done_evaluating > moving
+
+    def should_recreate(self):
+        moving = now() - timedelta(minutes=30)
+        return self.done_evaluating < moving
 
 
 class BestRecommendation(models.Model):
@@ -37,14 +48,18 @@ class BestRecommendation(models.Model):
     )
     start_evaluating = models.DateTimeField(null=True, blank=True)
     done_evaluating = models.DateTimeField(null=True, blank=True)
+    mean_const = models.FloatField(null=True, blank=True)
 
     def evaluate(self):
         last_model = BestModelCode.objects.last()
+        if not last_model.is_fresh():
+            return
         code = last_model.code
         if code.endswith("2"):
             self.symbol = "ADA"
         else:
             self.symbol = "ETH"
+        self.mean_const = last_model.mean_const
 
         hdf_function = None
         i = 0
@@ -54,7 +69,7 @@ class BestRecommendation(models.Model):
                 break
             i += 1
         assert hdf_function
-        df, coin = hdf_function()
+        df, coin = hdf_function(live=False)
         assert coin == self.symbol
         (
             initial_bank,
@@ -62,13 +77,16 @@ class BestRecommendation(models.Model):
             skipped_hours_ratio,
             hours_in_test,
             model,
-        ) = simulate(df, self.symbol)
+        ) = simulate(df, self.symbol, days_eval=0, mean_const=self.mean_const)
 
         live_df, coin = hdf_function(live=True)
         assert coin == self.symbol
 
         X = get_X_from_df(live_df, self.symbol)
         X = X[-1:]
+        row_datetime = pd.to_datetime(X.index)
+        age_of_last_row = now() - row_datetime
+        assert age_of_last_row.total_seconds() < 60 * 6
         Y = model.predict(X)
         assert len(Y) == 1
         side_int_value = int(Y[0])
@@ -80,3 +98,11 @@ class BestRecommendation(models.Model):
         self.side = t[side_int_value]
         self.done_evaluating = now()
         self.save()
+
+    def is_fresh(self):
+        moving = now() - timedelta(minutes=4)
+        return self.done_evaluating > moving
+
+    def should_recreate(self):
+        moving = now() - timedelta(minutes=2)
+        return self.done_evaluating < moving

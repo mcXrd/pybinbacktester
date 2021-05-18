@@ -5,9 +5,10 @@ from django.conf import settings
 from binance_f import RequestClient
 import time
 import numpy as np
-from django.utils.timezone import now
 from decimal import Decimal
 from typing import Tuple
+from apps.xgboost_models.models import BestRecommendation
+from django.utils.timezone import now, timedelta
 
 
 class TradeInterface:
@@ -240,6 +241,10 @@ class Position(models.Model):
     alive = models.BooleanField(default=True)
     fee_tier = models.CharField(null=True, blank=True, max_length=100)
 
+    def extend_liquidation(self):
+        self.liquidate_at = self.liquidate_at + timedelta(minutes=59)
+        self.save()
+
     @staticmethod
     def reverse_side(side):
         if side == Position.SHORT:
@@ -247,6 +252,28 @@ class Position(models.Model):
         return Position.SHORT
 
     def liquidate(self, trade_interface: TradeInterface):
+        br = BestRecommendation.objects.last()
+        if not br.is_fresh():
+            log = PositionLog.objects.create(
+                position=self, name="Reco not fresh - returning liquidate"
+            )
+            return
+        """ its commented because i wanna liquidate passes now
+        if br.side == BestRecommendation.PASS:
+            log = PositionLog.objects.create(
+                position=self, name="Reco is PASS - extending liquidation"
+            )
+            self.extend_liquidation()
+            return
+        """
+        if br.symbol == self.coin and br.side == self.side:
+            log = PositionLog.objects.create(
+                position=self,
+                name="Reco is same as this position already is - extending liquidation",
+            )
+            self.extend_liquidation()
+            return
+
         if not self.open_finished:
             raise Exception("Position is not even opened yet.")
         if self.liquidated:
@@ -302,3 +329,7 @@ class Position(models.Model):
     @property
     def base_symbol(self):
         return self.symbol.split("usdtfutures_")[1]
+
+    @property
+    def coin(self):
+        return self.base_symbol[:-4]

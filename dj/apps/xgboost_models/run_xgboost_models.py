@@ -19,8 +19,6 @@ from apps.xgboost_models.create_hdfs_for_models import (
     create_F2_hdf,
 )
 
-DAYS_EVAL = 2
-
 model_codes = ["A", "B", "C", "D", "E", "F", "A2", "B2", "C2", "D2", "E2", "F2"]
 hdf_create_functions = [
     create_A_hdf,
@@ -44,7 +42,7 @@ def get_X_from_df(df, coin):
     return X
 
 
-def simulate(df_orig, coin):
+def simulate(df_orig, coin, days_eval=2, mean_const=1):
     df_orig = df_orig.fillna(0)
     del df_orig["trade_in_3h_usdtfutures_{}USDT_close_price".format(coin)]
     del df_orig["trade_in_2h_usdtfutures_{}USDT_close_price".format(coin)]
@@ -54,7 +52,7 @@ def simulate(df_orig, coin):
     Y = df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)]
 
     Y_MEAN = np.mean(np.abs(Y))
-    Y_MEAN = Y_MEAN
+    Y_MEAN = Y_MEAN * mean_const
 
     Y = df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)]
     Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] > Y_MEAN] = 20
@@ -64,7 +62,10 @@ def simulate(df_orig, coin):
 
     X = get_X_from_df(df_orig, coin)
 
-    test_size = DAYS_EVAL / days
+    test_size = days_eval / days
+    if days_eval == 0:
+        test_size = 0.01
+
     X_train, X_test, Y_train, Y_test = train_test_split(
         X, Y, test_size=test_size, random_state=6, shuffle=False
     )
@@ -142,17 +143,24 @@ def simulate(df_orig, coin):
 
 def get_best_model_code():
 
-    results = []
-    for i in range(len(model_codes)):
-        df, coin = hdf_create_functions[i]()
-        (
-            initial_bank,
-            trading_hours,
-            skipped_hours_ratio,
-            hours_in_test,
-            model,
-        ) = simulate(df, coin)
-        results.append(initial_bank)
+    biggest_profit = 0
+    res_code, res_profit, res_mean_const = None, None, None
+    for mean_const in [1, 1 / 4]:
+        results = []
+        for i in range(len(model_codes)):
+            df, coin = hdf_create_functions[i]()
+            (
+                initial_bank,
+                trading_hours,
+                skipped_hours_ratio,
+                hours_in_test,
+                model,
+            ) = simulate(df, coin, mean_const=mean_const)
+            results.append(initial_bank)
 
-    max_i = np.argmax(results)
-    return model_codes[max_i], results[max_i]
+        max_i = np.argmax(results)
+        code, expected_profit = model_codes[max_i], results[max_i]
+        if expected_profit > biggest_profit:
+            res_code, res_profit, res_mean_const = code, expected_profit, mean_const
+
+    return res_code, res_profit, res_mean_const

@@ -4,7 +4,7 @@ import logging
 from apps.market_data.sync_kline_utils import main
 
 logger = logging.getLogger(__name__)
-TIME_INTERVAL = ["5 Jul, 2020", "8 May, 2021"]
+TIME_INTERVAL = ["5 Jul, 2020", "17 May, 2021"]
 
 
 class Command(BaseCommand):

@@ -9,12 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    last_br = BestRecommendation.objects.last()
+    if not last_br.should_recreate():
+        return
     br = BestRecommendation.objects.create()
     br.start_evaluating = now()
     br.save()
     sync_kline_main(
         max_workers=1,
-        time_interval=["4 minutes ago UTC"],
+        time_interval=["6 minutes ago UTC"],
         coins=["ADAUSDT", "ETHUSDT"],
         use_spot=False,
         use_futures=True,

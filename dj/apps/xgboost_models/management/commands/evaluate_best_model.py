@@ -11,7 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    best_model_code = BestModelCode()
+    last_best_model_code = BestModelCode.objects.last()
+    if not last_best_model_code.should_recreate():
+        return
+
+    best_model_code = BestModelCode.objects.create()
     best_model_code.start_evaluating = now()
     best_model_code.save()
     remove_too_old_klines(days=DAYS + 1)

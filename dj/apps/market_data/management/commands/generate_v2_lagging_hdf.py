@@ -75,6 +75,7 @@ class Command(BaseCommand):
         ):
             df = stationarify_column(df, column_name)
         df = df.replace([np.inf, -np.inf], 0)
+        df = df.sort_index()
         output_df_v2_lagged = self.A_transform(df.copy(), symbols_kline_attrs)
         save_output(output_df_v2_lagged, "v2_lagging_A" + kwargs["hdf_filename"])
         output_df_v2_lagged = self.B_transform(df.copy(), symbols_kline_attrs)

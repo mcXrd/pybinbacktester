@@ -60,6 +60,7 @@ def create_base_hdf(coin, days, live=False):
     ):
         df = stationarify_column(df, column_name)
     df = df.replace([np.inf, -np.inf], 0)
+    df = df.sort_index()
     return df, symbols_kline_attrs
 
 
