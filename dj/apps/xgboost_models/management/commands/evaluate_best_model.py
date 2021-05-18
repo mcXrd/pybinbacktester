@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     last_best_model_code = BestModelCode.objects.last()
-    if not last_best_model_code.should_recreate():
+    if last_best_model_code and not last_best_model_code.should_recreate():
         return
 
     best_model_code = BestModelCode.objects.create()
