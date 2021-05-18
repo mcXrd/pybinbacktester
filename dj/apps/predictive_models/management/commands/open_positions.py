@@ -21,7 +21,19 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    stucked_positions = Position.objects.filter(
+        liquidated=False,
+        open_finished__isnull=True,
+        start_to_open__lte=now() - timedelta(minutes=15),
+    )
+    if stucked_positions.exists():
+        for positon in stucked_positions:
+            trade_interface = TradeInterfaceBinanceFutures()
+            positon.open(trade_interface)
+        return
+
     positions_qs = Position.objects.filter(liquidated=False)
+
     if positions_qs.exists():
         return
     try:

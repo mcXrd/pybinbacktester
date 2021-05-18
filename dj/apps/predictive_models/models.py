@@ -53,7 +53,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             [float(price_result[0].close), float(price_result[-1].close)], ddof=1
         )
         close_price = price_result[-1].close
-        round_to_places = len(str(close_price))
+        round_to_places = len(str(close_price)) - 1
         return float(close_price), std, round_to_places
 
     def get_account_information(self):
