@@ -1,8 +1,8 @@
 from django.db import models
-from apps.xgboost_models.run_xgboost_modelsv2 import get_best_model_code
-from apps.xgboost_models.run_xgboost_modelsv2 import model_codes, hdf_create_functions
-from apps.xgboost_models.run_xgboost_modelsv2 import simulate
-from apps.xgboost_models.run_xgboost_modelsv2 import get_X_from_df
+from apps.xgboost_models.run_xgboost_models import get_best_model_code
+from apps.xgboost_models.run_xgboost_models import model_codes, hdf_create_functions
+from apps.xgboost_models.run_xgboost_models import simulate
+from apps.xgboost_models.run_xgboost_models import get_X_from_df
 from django.utils.timezone import now, timedelta
 import pandas as pd
 
