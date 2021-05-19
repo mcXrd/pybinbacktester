@@ -78,33 +78,17 @@ def main():
             if asset.asset == "USDT":
                 usdt_asset = asset
         total_usdt_amount = usdt_asset.marginBalance
-        initial_margin = usdt_asset.initialMargin
-        available_usdt_amount = total_usdt_amount - initial_margin
 
         price, std, round_to_places = trade_interface.get_current_close_price_and_std(
             symbol
         )
-
-        temp_res = {}
-        for position in Position.objects.filter(liquidated=False):
-            temp_side = 1 if position.side == Position.LONG else -1
-            if temp_res.get(position.base_symbol) is None:
-                temp_res[position.base_symbol] = []
-            temp_res[position.base_symbol].append(temp_side)
-
-        sides_sum = 0
-        for position_base_symbol in temp_res:
-            sides_sum = sides_sum + abs(sum(temp_res[position_base_symbol]))
-        distinct_positions_count = sides_sum
-
-        factor_for_usdt_amount_based_on_open_positions = 1 / (
-            settings.OPEN_POSITIONS_COUNT_LIMIT - distinct_positions_count
+        factor_for_usdt_amount_based_on_open_positions = (
+            1 / settings.OPEN_POSITIONS_COUNT_LIMIT
         )
-
         considered_quantity = count_quantity(
             symbol,
             price,
-            available_usdt_amount * factor_for_usdt_amount_based_on_open_positions,
+            total_usdt_amount * factor_for_usdt_amount_based_on_open_positions,
         )
         positon = Position.objects.create(
             symbol="usdtfutures_" + symbol,
