@@ -85,8 +85,20 @@ def main():
             symbol
         )
 
+        temp_res = {}
+        for position in Position.objects.filter(liquidated=False):
+            temp_side = 1 if position.side == Position.LONG else -1
+            if temp_res.get(position.base_symbol) is None:
+                temp_res[position.base_symbol] = []
+            temp_res[position.base_symbol].append(temp_side)
+
+        sides_sum = 0
+        for position_base_symbol in temp_res:
+            sides_sum = sides_sum + abs(sum(temp_res[position_base_symbol]))
+        distinct_positions_count = sides_sum
+
         factor_for_usdt_amount_based_on_open_positions = 1 / (
-            settings.OPEN_POSITIONS_COUNT_LIMIT - open_positions_count
+            settings.OPEN_POSITIONS_COUNT_LIMIT - distinct_positions_count
         )
 
         considered_quantity = count_quantity(
