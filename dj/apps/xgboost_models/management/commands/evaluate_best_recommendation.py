@@ -17,7 +17,7 @@ def main():
     br.save()
     sync_kline_main(
         max_workers=1,
-        time_interval=["6 minutes ago UTC"],
+        time_interval=["15 minutes ago UTC"],
         coins=["ADAUSDT", "ETHUSDT"],
         use_spot=False,
         use_futures=True,

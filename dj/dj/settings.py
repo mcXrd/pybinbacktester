@@ -27,7 +27,7 @@ SECRET_KEY = "#08h&h$718$-cz74#thzm^052kx5$om3ynz*a=$qk4onjha&e0"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+from dj.secrets import ALLOWED_HOSTS
 
 
 # Application definition
@@ -77,13 +77,14 @@ WSGI_APPLICATION = "dj.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
+from dj.secrets import PSQL_PASS
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "pybin",
         "USER": "pybin",
-        "PASSWORD": "pybin",
+        "PASSWORD": PSQL_PASS,
         "HOST": "localhost",
         "PORT": "",
     }
