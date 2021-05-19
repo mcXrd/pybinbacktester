@@ -133,6 +133,12 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                 noised_price = self.add_noise_to_price(price, std)
             else:
                 noised_price = price
+            if position.base_symbol == "ADAUSDT":
+                round_to_places = 3
+            elif position.base_symbol == "ETHUSDT":
+                round_to_places = 2
+            else:
+                raise Exception("Nondefined pair")
             noised_price = round(Decimal(noised_price), round_to_places)
             msg = "Price: {} ; Noised price {} ; STD: {} ; retries: {} ;".format(
                 price, noised_price, std, retries
