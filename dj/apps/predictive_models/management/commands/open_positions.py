@@ -16,6 +16,7 @@ from apps.predictive_models.live_trade_utils import (
 from apps.predictive_models.live_trade_utils import NoTradeException
 from apps.predictive_models.models import TradeInterfaceBinanceFutures
 from apps.xgboost_models.models import BestRecommendation
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,24 @@ def main():
         return
 
     positions_qs = Position.objects.filter(liquidated=False)
+    open_positions_count = positions_qs.count()
 
-    if positions_qs.exists():
+    if open_positions_count >= settings.OPEN_POSITIONS_COUNT_LIMIT:
         return
+
+    if open_positions_count:
+        last_open_position = Position.objects.filter(liquidated=False).last()
+        seconds_from_last_position = (
+            now() - last_open_position.open_finished
+        ).total_seconds()
+        minutes_from_last_position = seconds_from_last_position / 60
+        limit_to_open_again = (
+            settings.POSITION_OPEN_FOR_MINUTES / settings.OPEN_POSITIONS_COUNT_LIMIT
+        )
+
+        if minutes_from_last_position < limit_to_open_again:
+            return
+
     try:
         br = BestRecommendation.objects.last()
         if not br.is_fresh():
@@ -65,11 +81,18 @@ def main():
         price, std, round_to_places = trade_interface.get_current_close_price_and_std(
             symbol
         )
-        considered_quantity = count_quantity(symbol, price, usdt_amount)
+
+        factor_for_usdt_amount_based_on_open_positions = 1 / (
+            settings.OPEN_POSITIONS_COUNT_LIMIT - open_positions_count
+        )
+
+        considered_quantity = count_quantity(
+            symbol, price, usdt_amount * factor_for_usdt_amount_based_on_open_positions
+        )
         positon = Position.objects.create(
             symbol="usdtfutures_" + symbol,
             side=side,
-            liquidate_at=now() + timedelta(minutes=59),
+            liquidate_at=now() + timedelta(minutes=settings.POSITION_OPEN_FOR_MINUTES),
             quantity=str(considered_quantity),
             fee_tier=str(fee_tier),
         )

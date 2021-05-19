@@ -248,7 +248,9 @@ class Position(models.Model):
     fee_tier = models.CharField(null=True, blank=True, max_length=100)
 
     def extend_liquidation(self):
-        self.liquidate_at = self.liquidate_at + timedelta(minutes=59)
+        self.liquidate_at = self.liquidate_at + timedelta(
+            minutes=settings.POSITION_OPEN_FOR_MINUTES
+        )
         self.save()
 
     @staticmethod
