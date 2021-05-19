@@ -73,11 +73,14 @@ def main():
         trade_interface.change_initial_leverage(symbol, 1)
         ai = trade_interface.get_account_information()
         fee_tier = ai.feeTier
-        usdt_assset = None
+        usdt_asset = None
         for asset in ai.assets:
             if asset.asset == "USDT":
-                usdt_assset = asset
-        usdt_amount = usdt_assset.marginBalance
+                usdt_asset = asset
+        total_usdt_amount = usdt_asset.marginBalance
+        initial_margin = usdt_asset.initialMargin
+        available_usdt_amount = total_usdt_amount - initial_margin
+
         price, std, round_to_places = trade_interface.get_current_close_price_and_std(
             symbol
         )
@@ -87,7 +90,9 @@ def main():
         )
 
         considered_quantity = count_quantity(
-            symbol, price, usdt_amount * factor_for_usdt_amount_based_on_open_positions
+            symbol,
+            price,
+            available_usdt_amount * factor_for_usdt_amount_based_on_open_positions,
         )
         positon = Position.objects.create(
             symbol="usdtfutures_" + symbol,
