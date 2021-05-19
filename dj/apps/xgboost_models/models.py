@@ -30,6 +30,8 @@ class BestModelCode(models.Model):
 
     def should_recreate(self):
         moving = now() - timedelta(minutes=30)
+        if not self.done_evaluating:
+            return False
         return self.done_evaluating < moving
 
 
@@ -108,4 +110,6 @@ class BestRecommendation(models.Model):
 
     def should_recreate(self):
         moving = now() - timedelta(minutes=2)
+        if not self.done_evaluating:
+            return False
         return self.done_evaluating < moving

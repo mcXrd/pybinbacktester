@@ -15,6 +15,8 @@ from apps.market_data.technical_indicators_utils import SMA
 import numpy as np
 from django.utils import timezone
 from datetime import timedelta
+import pandas as pd
+import tqdm
 
 kline_attrs = ["close_price", "volume", "number_of_trades"]
 
@@ -61,6 +63,19 @@ def create_base_hdf(coin, days, live=False):
         df = stationarify_column(df, column_name)
     df = df.replace([np.inf, -np.inf], 0)
     df = df.sort_index()
+
+    for i in tqdm.tqdm(range(len(df) - 3)):
+        t1 = pd.to_datetime(df[i : i + 1].index)
+        t2 = pd.to_datetime(df[i + 1 : i + 2].index)
+        if int((t2 - t1).total_seconds().values[0]) != 60:
+            msg = "Dataframe is incompleted - t1 {} t2 {}".format(t1, t2)
+            from apps.predictive_models.models import AlertLog
+            AlertLog.objects.create(
+                name="Incomplete dataframe !!!",
+                log_message=msg,
+            )
+            raise Exception(msg)
+
     return df, symbols_kline_attrs
 
 
