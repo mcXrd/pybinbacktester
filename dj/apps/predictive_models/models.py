@@ -334,7 +334,7 @@ class Position(models.Model):
 
     @property
     def base_symbol(self):
-        return self.symbol.split("usdtfutures_")[1]
+        return self.symbol
 
     @property
     def coin(self):

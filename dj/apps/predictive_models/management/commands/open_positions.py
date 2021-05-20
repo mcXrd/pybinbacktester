@@ -98,7 +98,7 @@ def main():
             open_finished__isnull=False,
         )
         if (
-            reverse_qs.exist()
+            reverse_qs.exists()
         ):  # this will avoid multiple fee charges - it will close reverse orders - and
             # it will just create new ones with small fake amount instead (timing of creation of new positions
             # is tied to existing positions - thats why these needs to be created)
