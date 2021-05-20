@@ -11,18 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    stucked_liquidations = Position.objects.filter(
-        liquidated=False,
-        liquidation_being_processed=True,
-        start_to_liquidate__lte=now() - timedelta(minutes=15),
-    )
-    if stucked_liquidations.exists():
-        if stucked_liquidations.exists():
-            for position in stucked_liquidations:
-                trade_interface = TradeInterfaceBinanceFutures()
-                position.liquidate(trade_interface)
-            return
-
     stop_qs = Position.objects.filter(
         liquidation_being_processed=True, liquidated=False
     )
