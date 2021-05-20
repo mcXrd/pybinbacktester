@@ -302,8 +302,6 @@ class Position(models.Model):
             self.liq_after_fee_balance = (
                 trade_interface.get_current_fee_currency_balance()
             )
-            self.liquidation_finished = now()
-            self.liquidated = True
         finally:
             self.save()
 

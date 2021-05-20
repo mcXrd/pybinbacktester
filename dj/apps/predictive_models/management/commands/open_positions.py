@@ -90,14 +90,42 @@ def main():
             price,
             total_usdt_amount * factor_for_usdt_amount_based_on_open_positions,
         )
-        positon = Position.objects.create(
-            symbol="usdtfutures_" + symbol,
+
+        reverse_qs = Position.objects.filter(
+            symbol=symbol,
+            side=Position.reverse_side(side),
+            liquidated=False,
+            open_finished__isnull=False,
+        )
+        if (
+            reverse_qs.exist()
+        ):  # this will avoid multiple fee charges - it will close reverse orders - and
+            # it will just create new ones with small fake amount instead (timing of creation of new positions
+            # is tied to existing positions - thats why these needs to be created)
+            temp_pos = reverse_qs.last()
+            temp_pos.liquidate(trade_interface)
+
+            fake_quantity = settings.USDT_FUTURES_MINIMAL_TRADE_AMOUNT[
+                temp_pos.base_symbol
+            ]
+            considered_quantity = fake_quantity
+            position = Position.objects.create(
+                symbol=symbol,
+                side=side,
+                liquidate_at=temp_pos.liquidate_at,
+                quantity=str(considered_quantity),
+                fee_tier=str(fee_tier),
+            )
+            position.open(trade_interface)
+
+        position = Position.objects.create(
+            symbol=symbol,
             side=side,
             liquidate_at=now() + timedelta(minutes=settings.POSITION_OPEN_FOR_MINUTES),
             quantity=str(considered_quantity),
             fee_tier=str(fee_tier),
         )
-        positon.open(trade_interface)
+        position.open(trade_interface)
     except NoTradeException as e:
         CronLog.objects.create(
             name="Skipping trade oportunity",
