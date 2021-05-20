@@ -4,6 +4,7 @@ from apps.xgboost_models.run_xgboost_models import model_codes, hdf_create_funct
 from apps.xgboost_models.run_xgboost_models import simulate
 from apps.xgboost_models.run_xgboost_models import get_X_from_df
 from django.utils.timezone import now, timedelta
+from apps.predictive_models.models import AlertLog
 import pandas as pd
 
 # Create your models here.
@@ -24,13 +25,31 @@ class BestModelCode(models.Model):
         self.done_evaluating = now()
         self.save()
 
+    def unstuck(self):
+        minutes = 22
+        if (
+            not self.done_evaluating
+            and (now() - self.start_evaluating).total_seconds() > 60 * minutes
+        ):
+            AlertLog.objects.create(
+                name="BestModelCode was stuck for more than {} minutes - deleting".format(
+                    minutes
+                ),
+                log_message="start eval {} ".format(self.start_evaluating),
+            )
+            self.delete()
+
     def is_fresh(self):
         moving = now() - timedelta(minutes=60)
+        if not self.done_evaluating:
+            self.unstuck()
+            return False
         return self.done_evaluating > moving
 
     def should_recreate(self):
         moving = now() - timedelta(minutes=30)
         if not self.done_evaluating:
+            self.unstuck()
             return False
         return self.done_evaluating < moving
 
