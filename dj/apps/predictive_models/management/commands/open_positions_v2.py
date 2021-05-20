@@ -38,7 +38,7 @@ def main():
         return
 
     br_pass = BestRecommendation.objects.filter(
-        side=BestRecommendation.PASS, done_evaluating_gte=now() - timedelta(minutes=15)
+        side=BestRecommendation.PASS, done_evaluating__gte=now() - timedelta(minutes=15)
     )
     if br_pass.exists():
         AlertLog.objects.create(
