@@ -145,7 +145,7 @@ def get_best_model_code():
 
     biggest_profit = 0
     res_code, res_profit, res_mean_const = None, None, None
-    for mean_const in [1, 1 / 4]:
+    for mean_const in [1 / 4]:
         results = []
         for i in range(len(model_codes)):
             df, coin = hdf_create_functions[i]()
