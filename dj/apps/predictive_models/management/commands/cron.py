@@ -26,7 +26,7 @@ def main():
                 time.sleep(6)
         except Exception as e:
             AlertLog.objects.create(
-                name="cron_alternative.py Exception - loop will continue in 50 sec",
+                name="cron.py Exception - loop will continue in 50 sec",
                 log_message=str(e),
             )
             time.sleep(50)

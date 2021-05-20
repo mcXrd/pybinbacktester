@@ -6,6 +6,8 @@ from apps.market_data.sync_kline_utils import remove_too_old_klines
 from apps.xgboost_models.models import BestModelCode
 from apps.xgboost_models.commands_settings import DAYS, TIME_INTERVAL
 from django.utils.timezone import now
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
+from apps.market_data.sync_kline_utils import stop_process_pool
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,6 @@ def main():
     best_model_code.save()
     remove_too_old_klines(days=DAYS + 1)
     sync_kline_main(
-        max_workers=1,
         time_interval=[TIME_INTERVAL],
         coins=["ADAUSDT", "ETHUSDT"],
         use_spot=False,
@@ -36,4 +37,18 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **kwargs):
-        main()
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            from apps.xgboost_models.models import BestModelCode
+
+            timeout = 60 * BestModelCode.TIMEOUT_MINUTES
+            future = executor.submit(main)
+            try:
+                future.result(timeout=timeout)
+            except TimeoutError:
+                from apps.predictive_models.models import AlertLog
+
+                stop_process_pool(executor)
+
+                AlertLog.objects.create(
+                    name="Best model evaluation timeouted - {}".format(now())
+                )

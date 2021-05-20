@@ -1,5 +1,5 @@
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import List, Callable
 from binance_f import RequestClient
@@ -12,6 +12,7 @@ from django.utils import timezone
 from binance_f.model import CandlestickInterval
 from apps.market_data.usdtfutures_utils import get_usdtfutures_historical_klines
 from requests.exceptions import ConnectionError
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
 import time
 
 from apps.market_data.models import Kline
@@ -20,6 +21,12 @@ logger = logging.getLogger(__name__)
 
 EXCHANGE_FUTURES = settings.EXCHANGE_FUTURES
 EXCHANGE_SPOT = settings.EXCHANGE_SPOT
+
+
+def stop_process_pool(executor):
+    for pid, process in executor._processes.items():
+        process.terminate()
+    executor.shutdown()
 
 
 def binance_timestamp_to_utc_datetime(binance_timestamp: str) -> datetime:
@@ -89,7 +96,10 @@ def remove_too_old_klines(days=1):
 
 
 def main(
-    max_workers=1, time_interval=None, coins=None, use_spot=False, use_futures=True
+    time_interval=None,
+    coins=None,
+    use_spot=False,
+    use_futures=True,
 ):
     binance_client = BinanceClient(
         settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY
@@ -103,25 +113,18 @@ def main(
     for c in key_currencies:
         assert c in ticker_symbols
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        for ticker_symbol in key_currencies:
-            if use_spot:
-                futures[EXCHANGE_SPOT + ticker_symbol] = executor.submit(
-                    insert_klines,
-                    ticker_symbol,
-                    get_spot_klines,
-                    EXCHANGE_SPOT,
-                    time_interval,
-                )
-            if use_futures:
-                futures[EXCHANGE_FUTURES + ticker_symbol] = executor.submit(
-                    insert_klines,
-                    ticker_symbol,
-                    get_usdt_futures_klines,
-                    EXCHANGE_FUTURES,
-                    time_interval,
-                )
-
-    for ticker_symbol in futures:
-        futures[ticker_symbol].result()
+    for ticker_symbol in key_currencies:
+        if use_spot:
+            insert_klines(
+                ticker_symbol,
+                get_spot_klines,
+                EXCHANGE_SPOT,
+                time_interval,
+            )
+        if use_futures:
+            insert_klines(
+                ticker_symbol,
+                get_usdt_futures_klines,
+                EXCHANGE_FUTURES,
+                time_interval,
+            )

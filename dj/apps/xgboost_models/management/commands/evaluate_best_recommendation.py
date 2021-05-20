@@ -4,6 +4,8 @@ from django.core.management.base import BaseCommand
 from apps.xgboost_models.models import BestRecommendation
 from apps.market_data.sync_kline_utils import main as sync_kline_main
 from django.utils.timezone import now
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
+from apps.market_data.sync_kline_utils import stop_process_pool
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,6 @@ def main():
     br.start_evaluating = now()
     br.save()
     sync_kline_main(
-        max_workers=1,
         time_interval=["15 minutes ago UTC"],
         coins=["ADAUSDT", "ETHUSDT"],
         use_spot=False,
@@ -32,4 +33,18 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **kwargs):
-        main()
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            from apps.xgboost_models.models import BestRecommendation
+
+            timeout = 60 * BestRecommendation.TIMEOUT_MINUTES
+            future = executor.submit(main)
+            try:
+                future.result(timeout=timeout)
+            except TimeoutError:
+                from apps.predictive_models.models import AlertLog
+
+                stop_process_pool(executor)
+
+                AlertLog.objects.create(
+                    name="Best model evaluation timeouted - {}".format(now())
+                )

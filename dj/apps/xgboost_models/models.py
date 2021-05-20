@@ -4,13 +4,25 @@ from apps.xgboost_models.run_xgboost_models import model_codes, hdf_create_funct
 from apps.xgboost_models.run_xgboost_models import simulate
 from apps.xgboost_models.run_xgboost_models import get_X_from_df
 from django.utils.timezone import now, timedelta
-from apps.predictive_models.models import AlertLog
 import pandas as pd
 
 # Create your models here.
 
 
-class BestModelCode(models.Model):
+class UnstuckMixin:
+    def unstuck(self):
+        if (
+            not self.done_evaluating
+            and (now() - self.start_evaluating).total_seconds()
+            > 60 * self.TIMEOUT_MINUTES
+        ):
+            self.delete()
+
+
+class BestModelCode(UnstuckMixin, models.Model):
+
+    TIMEOUT_MINUTES = 22
+
     code = models.CharField(null=True, blank=True, max_length=20)
     expected_profit = models.FloatField(null=True, blank=True)
     start_evaluating = models.DateTimeField(null=True, blank=True)
@@ -24,20 +36,6 @@ class BestModelCode(models.Model):
         self.expected_profit = expected_profit
         self.done_evaluating = now()
         self.save()
-
-    def unstuck(self):
-        minutes = 22
-        if (
-            not self.done_evaluating
-            and (now() - self.start_evaluating).total_seconds() > 60 * minutes
-        ):
-            AlertLog.objects.create(
-                name="BestModelCode was stuck for more than {} minutes - deleting".format(
-                    minutes
-                ),
-                log_message="start eval {} ".format(self.start_evaluating),
-            )
-            self.delete()
 
     def is_fresh(self):
         moving = now() - timedelta(minutes=60)
@@ -54,7 +52,8 @@ class BestModelCode(models.Model):
         return self.done_evaluating < moving
 
 
-class BestRecommendation(models.Model):
+class BestRecommendation(UnstuckMixin, models.Model):
+    TIMEOUT_MINUTES = 5
     SHORT = "SHORT"
     LONG = "LONG"
     PASS = "PASS"
@@ -125,10 +124,14 @@ class BestRecommendation(models.Model):
 
     def is_fresh(self):
         moving = now() - timedelta(minutes=4)
+        if not self.done_evaluating:
+            self.unstuck()
+            return False
         return self.done_evaluating > moving
 
     def should_recreate(self):
         moving = now() - timedelta(minutes=2)
         if not self.done_evaluating:
+            self.unstuck()
             return False
         return self.done_evaluating < moving
