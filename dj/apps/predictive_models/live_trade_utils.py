@@ -26,6 +26,9 @@ import numpy as np
 from functools import lru_cache
 from django.conf import settings
 from decimal import Decimal
+from apps.predictive_models.models import Position
+from apps.predictive_models.models import TradeInterfaceBinanceFutures
+from django.utils.timezone import now
 
 SAFE_DAY_ADD = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
 
@@ -121,3 +124,33 @@ def count_quantity(symbol: str, price: float, usdt_amount: float) -> Decimal:
     considered_quantity = (usdt_amount * 0.95) / price
     considered_quantity = round_quantity(considered_quantity, symbol)
     return considered_quantity
+
+
+def liquidate_remaining_positions():
+    trade_interface = TradeInterfaceBinanceFutures()
+    client = trade_interface.get_request_client()
+    positions = client.get_position_v2()
+    positions_to_close = []
+    for position in positions:
+        if abs(position.positionAmt) > 0:
+            side = Position.LONG if position.positionAmt > 0 else Position.SHORT
+            _pos = {
+                "side": side,
+                "amount": abs(position.positionAmt),
+                "symbol": position.symbol,
+            }
+            positions_to_close.append(_pos)
+
+    ai = trade_interface.get_account_information()
+    fee_tier = ai.feeTier
+    for position_dict in positions_to_close:
+        _pos = Position.objects.create(
+            symbol=position_dict["symbol"],
+            side=position_dict["side"],
+            liquidate_at=now(),
+            quantity=position_dict["amount"],
+            fee_tier=str(fee_tier),
+            start_to_open=now(),
+            open_finished=now(),
+        )
+        _pos.liquidate(trade_interface, ignore_recommendation=True)

@@ -259,7 +259,7 @@ class Position(models.Model):
             return Position.LONG
         return Position.SHORT
 
-    def liquidate(self, trade_interface: TradeInterface):
+    def liquidate(self, trade_interface: TradeInterface, ignore_recommendation=False):
         br = BestRecommendation.objects.last()
         if not br.is_fresh():
             log = PositionLog.objects.create(
@@ -274,7 +274,11 @@ class Position(models.Model):
             self.extend_liquidation()
             return
         """
-        if br.symbol == self.coin and br.side == self.side:
+        if (
+            not ignore_recommendation
+            and br.symbol == self.coin
+            and br.side == self.side
+        ):
             log = PositionLog.objects.create(
                 position=self,
                 name="Reco is same as this position already is - extending liquidation",

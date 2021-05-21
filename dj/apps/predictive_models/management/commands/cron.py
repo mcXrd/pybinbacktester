@@ -18,6 +18,7 @@ def main():
                 call_command("evaluate_best_model")
                 call_command("evaluate_best_recommendation")
                 call_command("liquidate_positions")
+                time.sleep(3)
                 call_command("open_positions_v2")
                 time.sleep(6)
 
