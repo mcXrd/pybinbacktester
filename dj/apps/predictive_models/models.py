@@ -266,14 +266,12 @@ class Position(models.Model):
                 position=self, name="Reco not fresh - returning liquidate"
             )
             return
-        """ its commented because i wanna liquidate passes now
         if br.side == BestRecommendation.PASS:
             log = PositionLog.objects.create(
                 position=self, name="Reco is PASS - extending liquidation"
             )
             self.extend_liquidation()
             return
-        """
         if (
             not ignore_recommendation
             and br.symbol == self.coin
