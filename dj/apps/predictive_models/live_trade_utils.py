@@ -29,6 +29,7 @@ from decimal import Decimal
 from apps.predictive_models.models import Position
 from apps.predictive_models.models import TradeInterfaceBinanceFutures
 from django.utils.timezone import now
+from apps.predictive_models.models import CronLog
 
 SAFE_DAY_ADD = (int(settings.LARGEST_DF_WINDOW / 24)) + 2
 
@@ -143,6 +144,9 @@ def liquidate_remaining_positions():
 
     ai = trade_interface.get_account_information()
     fee_tier = ai.feeTier
+    CronLog.objects.create(
+        name="Liquidating leftover positions", log_message=str(positions_to_close)
+    )
     for position_dict in positions_to_close:
         _pos = Position.objects.create(
             symbol=position_dict["symbol"],
