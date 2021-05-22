@@ -266,7 +266,7 @@ class Position(models.Model):
                 position=self, name="Reco not fresh - returning liquidate"
             )
             return
-        if br.side == BestRecommendation.PASS:
+        if not ignore_recommendation and br.side == BestRecommendation.PASS:
             log = PositionLog.objects.create(
                 position=self, name="Reco is PASS - extending liquidation"
             )
