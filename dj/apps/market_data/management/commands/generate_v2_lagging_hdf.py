@@ -67,7 +67,7 @@ class Command(BaseCommand):
         kline_attrs = ["close_price", "volume", "number_of_trades"]
         df = create_base_dataframe(qs, kline_attrs=kline_attrs)
         symbols_kline_attrs = merge_symbols_and_kline_attrs(qs, df, kline_attrs)
-        df = add_forecasts_to_df(df, live=False)
+        df = add_forecasts_to_df(df, live=False, shift=60)
         for column_name in (
             get_close_price_columns(df)
             + get_volume_columns(df)

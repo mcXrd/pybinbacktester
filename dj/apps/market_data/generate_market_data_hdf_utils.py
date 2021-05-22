@@ -147,9 +147,8 @@ def get_number_of_trades_columns(df):
     return get_endswithc_column(df, "_number_of_trades")
 
 
-def add_forecasts_to_df(df, live):
+def add_forecasts_to_df(df, live, shift=60):
     close_price_columns = get_close_price_columns(df)
-    shift = 60
     for c in close_price_columns:
         if "spot" in c:
             continue

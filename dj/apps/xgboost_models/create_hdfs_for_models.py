@@ -98,7 +98,7 @@ def create_C_hdf(live=False):
 
 
 def create_D_hdf(live=False):
-    df, symbols_kline_attrs = create_base_hdf("ETHUSDT", 5, live=live)
+    df, symbols_kline_attrs = create_base_hdf("ETHUSDT", 10, live=live)
     df = A_transform(df.copy(), symbols_kline_attrs)
     return df, "ETH"
 
@@ -134,7 +134,7 @@ def create_C2_hdf(live=False):
 
 
 def create_D2_hdf(live=False):
-    df, symbols_kline_attrs = create_base_hdf("ADAUSDT", 5, live=live)
+    df, symbols_kline_attrs = create_base_hdf("ADAUSDT", 10, live=live)
     df = A_transform(df.copy(), symbols_kline_attrs)
     return df, "ADA"
 
