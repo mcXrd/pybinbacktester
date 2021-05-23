@@ -8,6 +8,7 @@ from apps.xgboost_models.commands_settings import DAYS, TIME_INTERVAL
 from django.utils.timezone import now
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from apps.market_data.sync_kline_utils import stop_process_pool
+from apps.market_data.models import Kline
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,9 @@ def main():
     best_model_code = BestModelCode.objects.create()
     best_model_code.start_evaluating = now()
     best_model_code.save()
-    remove_too_old_klines(days=DAYS + 1)
+    # remove_too_old_klines(days=DAYS + 1)
+    Kline.objects.all().delete()
+
     sync_kline_main(
         time_interval=[TIME_INTERVAL],
         coins=["ADAUSDT", "ETHUSDT"],
