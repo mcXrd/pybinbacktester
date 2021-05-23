@@ -99,7 +99,7 @@ def simulate(df_orig, coin, days_eval=2, mean_const=1):
     trading_hours = 0
     skipped_hours = 0
     last_side = -1
-    for i in range(1, len(Y_TEST_REAL), 60):
+    for i in range(1, len(Y_TEST_REAL), 180):
         trading_hours += 1
         y_p = y_pred[i]
         y_r = Y_TEST_REAL[i]

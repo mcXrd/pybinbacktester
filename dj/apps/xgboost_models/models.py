@@ -123,14 +123,14 @@ class BestRecommendation(UnstuckMixin, models.Model):
         self.save()
 
     def is_fresh(self):
-        moving = now() - timedelta(minutes=4)
+        moving = now() - timedelta(minutes=6)
         if not self.done_evaluating:
             self.unstuck()
             return False
         return self.done_evaluating > moving
 
     def should_recreate(self):
-        moving = now() - timedelta(minutes=2)
+        moving = now() - timedelta(minutes=3)
         if not self.done_evaluating:
             self.unstuck()
             return False
