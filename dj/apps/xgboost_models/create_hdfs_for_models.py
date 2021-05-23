@@ -48,6 +48,10 @@ def C_transform(df, symbols_kline_attrs):
     return output_df_v2_lagged
 
 
+class IncompleteDataframeException(Exception):
+    pass
+
+
 def create_base_hdf(coin, days, live=False):
     start = timezone.now() - timedelta(days=days)
     end = timezone.now()
@@ -70,11 +74,12 @@ def create_base_hdf(coin, days, live=False):
         if int((t2 - t1).total_seconds().values[0]) != 60:
             msg = "Dataframe is incompleted - t1 {} t2 {}".format(t1, t2)
             from apps.predictive_models.models import AlertLog
+
             AlertLog.objects.create(
                 name="Incomplete dataframe !!!",
                 log_message=msg,
             )
-            raise Exception(msg)
+            raise IncompleteDataframeException(msg)
 
     return df, symbols_kline_attrs
 

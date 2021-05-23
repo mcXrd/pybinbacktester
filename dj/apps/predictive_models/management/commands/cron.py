@@ -5,6 +5,7 @@ from django.core.management import call_command
 import time
 from django.utils.timezone import now
 from apps.predictive_models.models import CronLog, AlertLog
+from apps.xgboost_models.create_hdfs_for_models import IncompleteDataframeException
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,13 @@ def main():
             if currenct_second > 25 and currenct_second < 30:
                 call_command("delete_blowing_logs")
                 time.sleep(6)
+        except IncompleteDataframeException as e:
+            AlertLog.objects.create(
+                name="cron.py Exception - loop will continue in 50 sec",
+                log_message=str(e),
+            )
+            call_command("liquidate_positions")
+            time.sleep(50)
         except Exception as e:
             AlertLog.objects.create(
                 name="cron.py Exception - loop will continue in 50 sec",
