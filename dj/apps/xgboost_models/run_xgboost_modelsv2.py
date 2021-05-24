@@ -34,7 +34,7 @@ def get_X_from_df(df, coin):
     return X
 
 
-def simulate(df_orig, coin, days_eval=2, mean_const=1):
+def simulate(df_orig, coin, days_eval=1, mean_const=1):
     df_orig = df_orig.fillna(0)
     del df_orig["trade_in_3h_usdtfutures_{}USDT_close_price".format(coin)]
     del df_orig["trade_in_2h_usdtfutures_{}USDT_close_price".format(coin)]

@@ -161,8 +161,8 @@ def add_forecasts_to_df(df, live, shift=60):
         df.insert(0, trade_in_2h, np.ones(df.shape[0]))
         df.insert(0, trade_in_3h, np.ones(df.shape[0]))
         df[trade_in_1h] = (
-            df.shift(-3 * shift)[c] / df[c] - 1
-        )  # CARE - TODO its 3h actually
+            df.shift(-1 * shift)[c] / df[c] - 1
+        )
         df[trade_in_2h] = df.shift(-2 * shift)[c] / df[c] - 1
         df[trade_in_3h] = df.shift(-3 * shift)[c] / df[c] - 1
 

@@ -91,8 +91,8 @@ class BestRecommendation(UnstuckMixin, models.Model):
         assert hdf_function
         df, coin = hdf_function(live=False)
         df = df[
-            60 * 24 * 2 :
-        ]  # removing first two days - because we wont have test/eval split
+            60 * 24 * 1 :
+        ]  # removing first day - because we wont have test/eval split
         assert coin == self.symbol
         (
             initial_bank,
