@@ -6,6 +6,8 @@ import time
 from django.utils.timezone import now
 from apps.predictive_models.models import CronLog, AlertLog
 from apps.xgboost_models.create_hdfs_for_models import IncompleteDataframeException
+from apps.market_data.models import Kline
+from apps.xgboost_models.models import BestModelCode
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,15 @@ def main():
                 time.sleep(6)
         except IncompleteDataframeException as e:
             AlertLog.objects.create(
-                name="cron.py Exception - loop will continue in 50 sec",
+                name="cron.py Exception - loop will continue in 6*60 sec - will try to delete klines and sync them again",
                 log_message=str(e),
             )
-            call_command("liquidate_positions")
-            time.sleep(50)
+            time.sleep(60 * 6)
+            BestModelCode.objects.last().delete()
+            BestModelCode.objects.last().delete()
+            Kline.objects.all().delete()
+            call_command("evaluate_best_model")
+
         except Exception as e:
             AlertLog.objects.create(
                 name="cron.py Exception - loop will continue in 50 sec",
