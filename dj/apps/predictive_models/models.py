@@ -123,6 +123,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         retries = -1
         noised_price = None
         last_order = None
+        last_noised_price = None
         while True:
             if not position.alive:
                 raise Exception("Executing position which is not alive")
@@ -171,7 +172,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                             position=position, name="Order posted"
                         )
                         log.log_order(last_order)
-                        break
+                        return last_noised_price
 
                 PositionLog.objects.create(
                     position=position, name="Order post failed", log_message=str(e)
@@ -187,6 +188,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                 break
 
             last_order = order
+            last_noised_price = noised_price
 
         return noised_price
 
