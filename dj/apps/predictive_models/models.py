@@ -122,6 +122,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         request_client = self.get_request_client()
         retries = -1
         noised_price = None
+        last_order = None
         while True:
             if not position.alive:
                 raise Exception("Executing position which is not alive")
@@ -156,6 +157,22 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                     timeInForce=TimeInForce.GTC,
                 )
             except Exception as e:
+                insufficient_margin_str = "argin is insufficient"
+                if insufficient_margin_str in str(e):
+                    if retries == 0:
+                        raise Exception("Margin is insufficient. {}".format(str(e)))
+                    if retries > 0:
+                        PositionLog.objects.create(
+                            position=position,
+                            name="Race condition in order - Order should be already posted",
+                            log_message=str(e),
+                        )
+                        log = PositionLog.objects.create(
+                            position=position, name="Order posted"
+                        )
+                        log.log_order(last_order)
+                        break
+
                 PositionLog.objects.create(
                     position=position, name="Order post failed", log_message=str(e)
                 )
@@ -168,6 +185,9 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                 request_client, position
             ):  # order was filled
                 break
+
+            last_order = order
+
         return noised_price
 
 
