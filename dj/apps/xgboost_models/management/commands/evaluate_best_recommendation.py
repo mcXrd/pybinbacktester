@@ -18,7 +18,7 @@ def main():
     br.start_evaluating = now()
     br.save()
     sync_kline_main(
-        time_interval=["15 minutes ago UTC"],
+        time_interval=["7 minutes ago UTC"],
         coins=["ADAUSDT", "ETHUSDT"],
         use_spot=False,
         use_futures=True,
