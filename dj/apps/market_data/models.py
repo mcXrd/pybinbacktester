@@ -32,3 +32,10 @@ class Kline(models.Model):
             close_time=self.close_time + datetime.timedelta(hours=hours),
         )
         return k
+
+
+class DatabaseSync(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    success = models.BooleanField(null=True, blank=True)
+    retries = models.IntegerField(null=True, blank=True)

@@ -6,6 +6,7 @@ from apps.market_data.sync_kline_utils import main as sync_kline_main
 from django.utils.timezone import now
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from apps.market_data.sync_kline_utils import stop_process_pool
+from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,7 @@ def main():
     br = BestRecommendation.objects.create()
     br.start_evaluating = now()
     br.save()
-    sync_kline_main(
-        time_interval=["7 minutes ago UTC"],
-        coins=["ADAUSDT", "ETHUSDT"],
-        use_spot=False,
-        use_futures=True,
-    )
+    call_command("resync_klines_dynamically")
     br.evaluate()
 
 

@@ -130,7 +130,7 @@ class BestRecommendation(UnstuckMixin, models.Model):
         return self.done_evaluating > moving
 
     def should_recreate(self):
-        moving = now() - timedelta(minutes=3)
+        moving = now() - timedelta(minutes=5)
         if not self.done_evaluating:
             self.unstuck()
             return False

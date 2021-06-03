@@ -30,14 +30,12 @@ def main():
                 time.sleep(6)
         except IncompleteDataframeException as e:
             AlertLog.objects.create(
-                name="cron.py Exception - loop will continue in 6*60 sec - will try to delete klines and sync them again",
+                name="cron.py Exception - loop will continue in 10*60 sec - will try to delete klines and sync them again",
                 log_message=str(e),
             )
-            time.sleep(60 * 6)
-            BestModelCode.objects.last().delete()
-            BestModelCode.objects.last().delete()
+            time.sleep(60 * 10)
             Kline.objects.all().delete()
-            call_command("evaluate_best_model")
+            call_command("resync_klines_dynamically")
 
         except Exception as e:
             AlertLog.objects.create(
