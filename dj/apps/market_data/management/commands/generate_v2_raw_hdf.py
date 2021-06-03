@@ -31,6 +31,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         qs = fetch_input(kwargs["time_interval"], kwargs["pairs"])
-        output_df_v2 = create_dataframe_v2(qs, live=False, minutes=45)
+        output_df_v2 = create_dataframe_v2(qs, live=False, minutes=90)
         output_df_v2 = add_forecasts_to_df(output_df_v2, live=False)
         save_output(output_df_v2, "v2_raw_" + kwargs["hdf_filename"])

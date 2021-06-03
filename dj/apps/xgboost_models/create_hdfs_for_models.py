@@ -53,7 +53,8 @@ class IncompleteDataframeException(Exception):
 
 
 def create_base_hdf(coin, days, live=False):
-    start = timezone.now() - timedelta(days=days)
+    hours = int(days * 24)
+    start = timezone.now() - timedelta(hours=hours)
     end = timezone.now()
     qs = fetch_input((start, end), [coin])
     df = create_base_dataframe(qs, kline_attrs=kline_attrs)

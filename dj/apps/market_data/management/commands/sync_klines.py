@@ -6,7 +6,10 @@ from apps.market_data.sync_kline_utils import main
 logger = logging.getLogger(__name__)
 TIME_INTERVAL = ["5 Jul, 2020", "22 May, 2021"]
 TIME_INTERVAL = ["5 Jul, 2020", "22 Dec, 2020"]
-#TIME_INTERVAL = ["22 Apr, 2021", "22 May, 2021"]
+TIME_INTERVAL = ["28 Apr, 2021", "29 May, 2021"]
+
+
+TIME_INTERVAL = ["29 May, 2020", "29 May, 2021"]
 
 
 class Command(BaseCommand):

@@ -54,18 +54,17 @@ class Command(BaseCommand):
         return output_df_v2_lagged
 
     def C_transform(self, df, symbols_kline_attrs):
-        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 1, 30)
+        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 9, 5)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 9, 60)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 9, 120)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 9, 240)
         output_df_v2_lagged = output_df_v2_lagged[270:]
         return output_df_v2_lagged
 
     def handle(self, *args, **kwargs):
         qs = fetch_input(kwargs["time_interval"], kwargs["pairs"])
         kline_attrs = ["close_price", "volume"]
-        kline_attrs = ["close_price", "volume", "number_of_trades"]
-        df = create_base_dataframe(qs, kline_attrs=kline_attrs)
+        df = create_base_dataframe(qs, kline_attrs=kline_attrs, skip_symbols_kline_attrs=True)
         symbols_kline_attrs = merge_symbols_and_kline_attrs(qs, df, kline_attrs)
         df = add_forecasts_to_df(df, live=False, shift=60)
         for column_name in (

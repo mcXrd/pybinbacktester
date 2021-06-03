@@ -82,7 +82,9 @@ def merge_symbols_and_kline_attrs(input_queryset, df, kline_attrs):
 
 
 def create_base_dataframe(
-    input_queryset: django.db.models.query.QuerySet, kline_attrs=None
+    input_queryset: django.db.models.query.QuerySet,
+    kline_attrs=None,
+    skip_symbols_kline_attrs=False,
 ) -> pd.DataFrame:
     df = pd.DataFrame()
     kline_attrs = kline_attrs or [
@@ -96,7 +98,8 @@ def create_base_dataframe(
         "taker_buy_base_asset_volume",
         "taker_buy_quote_asset_volume",
     ]
-    merge_symbols_and_kline_attrs(input_queryset, df, kline_attrs)
+    if not skip_symbols_kline_attrs:
+        merge_symbols_and_kline_attrs(input_queryset, df, kline_attrs)
 
     return df
 
@@ -108,9 +111,7 @@ def add_hyperfeatures_to_df(df):
         df["{}_ewm_mean".format(c)] = df[c].ewm(com=0.5).mean()
         df["{}_ewm_std".format(c)] = df[c].ewm(com=0.5).std()
         df["{}_ewm_cov".format(c)] = df[c].ewm(com=0.5).cov()
-        windows = [60, 60 * 24 * 1, 60 * 24 * 7]
-        # windows = [2, 4]
-        # windows = []
+        windows = [20,90]
         # assert max(windows) < settings.LARGEST_DF_WINDOW
         for base_size in windows:
             df["{}_mean_{}".format(c, base_size)] = (
@@ -160,9 +161,7 @@ def add_forecasts_to_df(df, live, shift=60):
         df.insert(0, trade_in_1h, np.ones(df.shape[0]))
         df.insert(0, trade_in_2h, np.ones(df.shape[0]))
         df.insert(0, trade_in_3h, np.ones(df.shape[0]))
-        df[trade_in_1h] = (
-            df.shift(-1 * shift)[c] / df[c] - 1
-        )
+        df[trade_in_1h] = df.shift(-1 * shift)[c] / df[c] - 1
         df[trade_in_2h] = df.shift(-2 * shift)[c] / df[c] - 1
         df[trade_in_3h] = df.shift(-3 * shift)[c] / df[c] - 1
 
@@ -174,9 +173,12 @@ def add_forecasts_to_df(df, live, shift=60):
 def create_dataframe(
     input_queryset: django.db.models.query.QuerySet, live=False
 ) -> pd.DataFrame:
-    df = create_base_dataframe(input_queryset)
+    kline_attrs = ["close_price", "volume"]
+    df = create_base_dataframe(input_queryset, kline_attrs=kline_attrs)
+    base_columns = df.columns
     df = add_hyperfeatures_to_df(df)
     df = add_forecasts_to_df(df, live=live)
+    df = df.drop(columns=base_columns)
     return df
 
 

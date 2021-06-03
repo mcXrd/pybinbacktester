@@ -15,7 +15,7 @@ def SMA(df: pd.DataFrame, window: int, kline_attrs: list, shifts: int, shift_amo
         nm = "SMA({}_{})".format(one, window)
         df[nm] = df[one].rolling(window).mean()
         for i in range(shifts):
-            df["shift{}_{}".format(i+1, nm)] = df[nm].shift(shift_amount)
+            df["shift{}_{}".format(i+1, nm)] = df[nm].shift((i+1) * shift_amount)
     return df
 
 
