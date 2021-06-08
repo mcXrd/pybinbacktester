@@ -101,10 +101,12 @@ def main():
 
     model = create_model(df_train, "ADA")
 
-    df_eval, symbols_kline_attrs = create_base_hdf("ADAUSDT", 10, live=True)
-    df_train = C_transform(df_train, symbols_kline_attrs)
+    call_command("resync_klines_dynamically")
 
-    profit, side = predict_row(df_train, len(df_train) - 1, model, "ADA")
+    df_eval, symbols_kline_attrs = create_base_hdf("ADAUSDT", 10, live=True)
+    df_eval = C_transform(df_eval, symbols_kline_attrs)
+
+    profit, side = predict_row(df_eval, len(df_eval) - 1, model, "ADA")
     t = {
         0: BestRecommendation.PASS,
         -1: BestRecommendation.SHORT,
