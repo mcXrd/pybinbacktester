@@ -110,6 +110,7 @@ def main():
         -1: BestRecommendation.SHORT,
         1: BestRecommendation.LONG,
     }
+    br.symbol = "ADA"
     br.side = t[side]
     br.done_evaluating = now()
     br.save()
