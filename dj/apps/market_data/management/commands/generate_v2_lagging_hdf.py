@@ -38,26 +38,22 @@ class Command(BaseCommand):
         )
 
     def A_transform(self, df, symbols_kline_attrs):
-        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 30, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 90, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 1, 30)
+        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 4, 5)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 30, symbols_kline_attrs, 4, 30)
         output_df_v2_lagged = output_df_v2_lagged[270:]
         return output_df_v2_lagged
 
     def B_transform(self, df, symbols_kline_attrs):
-        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 30, symbols_kline_attrs, 1, 30)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 1, 30)
+        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 8, 5)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 30, symbols_kline_attrs, 8, 30)
         output_df_v2_lagged = output_df_v2_lagged[270:]
         return output_df_v2_lagged
 
     def C_transform(self, df, symbols_kline_attrs):
-        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 9, 5)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 9, 60)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 9, 120)
-        output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 9, 240)
+        output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 5)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 8, 60)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 8, 120)
+        output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 8, 240)
         output_df_v2_lagged = output_df_v2_lagged[270:]
         return output_df_v2_lagged
 

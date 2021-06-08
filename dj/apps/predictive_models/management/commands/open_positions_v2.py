@@ -17,6 +17,7 @@ from apps.predictive_models.live_trade_utils import NoTradeException
 from apps.predictive_models.models import TradeInterfaceBinanceFutures
 from apps.xgboost_models.models import BestRecommendation
 from django.conf import settings
+from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,9 @@ def main():
     positions_qs = Position.objects.filter(liquidated=False)
     if positions_qs.exists():
         return
+
+    call_command("resync_klines_dynamically")
+    call_command("best_reco_v2")
 
     br_pass = BestRecommendation.objects.filter(
         side=BestRecommendation.PASS, done_evaluating__gte=now() - timedelta(minutes=15)

@@ -6,6 +6,7 @@ from django.utils import timezone
 from apps.predictive_models.models import TradeInterfaceBinanceFutures
 from apps.predictive_models.models import CronLog
 from django.utils.timezone import now, timedelta
+from django.core.management import call_command
 import time
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,10 @@ def main():
     positions_qs = Position.objects.filter(
         liquidate_at__lte=timezone.now(), liquidated=False, open_finished__isnull=False
     )
+    if positions_qs.exists():
+        call_command("resync_klines_dynamically")
+        call_command("best_reco_v2")
+
     for position in positions_qs:
         CronLog.objects.create(name="Liquidating position", log_message=str(position))
         position.liquidate(TradeInterfaceBinanceFutures())

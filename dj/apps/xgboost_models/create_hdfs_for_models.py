@@ -18,7 +18,7 @@ from datetime import timedelta
 import pandas as pd
 import tqdm
 
-kline_attrs = ["close_price", "volume", "number_of_trades"]
+kline_attrs = ["close_price", "volume"]
 
 
 def A_transform(df, symbols_kline_attrs):
@@ -40,10 +40,10 @@ def B_transform(df, symbols_kline_attrs):
 
 
 def C_transform(df, symbols_kline_attrs):
-    output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 30)
-    output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 0, 30)
-    output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 0, 30)
-    output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 0, 30)
+    output_df_v2_lagged = SMA(df, 5, symbols_kline_attrs, 0, 5)
+    output_df_v2_lagged = SMA(output_df_v2_lagged, 60, symbols_kline_attrs, 8, 60)
+    output_df_v2_lagged = SMA(output_df_v2_lagged, 120, symbols_kline_attrs, 8, 120)
+    output_df_v2_lagged = SMA(output_df_v2_lagged, 240, symbols_kline_attrs, 8, 240)
     output_df_v2_lagged = output_df_v2_lagged[270:]
     return output_df_v2_lagged
 

@@ -19,7 +19,7 @@ class Command(BaseCommand):
             minutes_to_sync = int(seconds_since_latest_kline_close_time / 60) + 2
         sync_kline_main(
             time_interval=["{} minutes ago UTC".format(minutes_to_sync)],
-            coins=["ADAUSDT", "ETHUSDT"],
+            coins=["ADAUSDT"],
             use_spot=False,
             use_futures=True,
         )
