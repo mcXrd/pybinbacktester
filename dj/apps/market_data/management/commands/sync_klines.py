@@ -9,7 +9,7 @@ TIME_INTERVAL = ["5 Jul, 2020", "22 Dec, 2020"]
 TIME_INTERVAL = ["28 Apr, 2021", "29 May, 2021"]
 
 
-TIME_INTERVAL = ["29 May, 2020", "29 May, 2021"]
+TIME_INTERVAL = ["9 Jun, 2020", "9 Jun, 2021"]
 
 
 class Command(BaseCommand):

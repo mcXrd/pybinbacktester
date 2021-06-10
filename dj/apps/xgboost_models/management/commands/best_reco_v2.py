@@ -25,11 +25,11 @@ def create_model(df_orig, coin):
     del df_orig["trade_in_3h_usdtfutures_{}USDT_close_price".format(coin)]
     del df_orig["trade_in_2h_usdtfutures_{}USDT_close_price".format(coin)]
     df = df_orig.copy()
-    df = df.sample(frac=1 / 8)
+    df = df.sample(frac=1 / 2)
     Y = df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)]
 
     Y_MEAN = np.mean(np.abs(Y))
-    Y_MEAN = Y_MEAN * (1 / 8)
+    Y_MEAN = Y_MEAN * (1 / 2)
 
     Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] > Y_MEAN] = 20
     Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] < -Y_MEAN] = 10
