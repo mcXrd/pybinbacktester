@@ -108,10 +108,10 @@ def add_hyperfeatures_to_df(df):
     original_columns = list(df.columns)
 
     for c in original_columns:
-        df["{}_ewm_mean".format(c)] = df[c].ewm(com=0.5).mean()
-        df["{}_ewm_std".format(c)] = df[c].ewm(com=0.5).std()
-        df["{}_ewm_cov".format(c)] = df[c].ewm(com=0.5).cov()
-        windows = [20,90]
+        df["{}_ewm_mean".format(c)] = df[c].ewm(com=10).mean()
+        df["{}_ewm_std".format(c)] = df[c].ewm(com=10).std()
+        df["{}_ewm_cov".format(c)] = df[c].ewm(com=10).cov()
+        windows = [10, 120, 240, 480]
         # assert max(windows) < settings.LARGEST_DF_WINDOW
         for base_size in windows:
             df["{}_mean_{}".format(c, base_size)] = (
@@ -156,18 +156,12 @@ def add_forecasts_to_df(df, live, shift=60):
             continue
 
         trade_in_1h = "trade_in_1h_{}".format(c)
-        trade_in_2h = "trade_in_2h_{}".format(c)
-        trade_in_3h = "trade_in_3h_{}".format(c)
         df.insert(0, trade_in_1h, np.ones(df.shape[0]))
-        df.insert(0, trade_in_2h, np.ones(df.shape[0]))
-        df.insert(0, trade_in_3h, np.ones(df.shape[0]))
         df[trade_in_1h] = df.shift(-1 * shift)[c] / df[c] - 1
-        df[trade_in_2h] = df.shift(-2 * shift)[c] / df[c] - 1
-        df[trade_in_3h] = df.shift(-3 * shift)[c] / df[c] - 1
 
     if live:
         return df
-    return df[: -3 * shift]  # the latest one is incomplete
+    return df[: -1 * shift]  # the latest one is incomplete
 
 
 def create_dataframe(

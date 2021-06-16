@@ -27,8 +27,9 @@ def main():
     if positions_qs.exists():
         return
 
-    call_command("resync_klines_dynamically")
-    call_command("best_reco_v2")
+    # call_command("resync_klines_dynamically")
+    # call_command("best_reco_v3")
+    # should be already done in liquidation
 
     br_pass = BestRecommendation.objects.filter(
         side=BestRecommendation.PASS, done_evaluating__gte=now() - timedelta(minutes=15)

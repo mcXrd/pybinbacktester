@@ -53,7 +53,7 @@ class BestModelCode(UnstuckMixin, models.Model):
 
 
 class BestRecommendation(UnstuckMixin, models.Model):
-    TIMEOUT_MINUTES = 5
+    TIMEOUT_MINUTES = 15
     SHORT = "SHORT"
     LONG = "LONG"
     PASS = "PASS"

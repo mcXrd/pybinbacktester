@@ -26,7 +26,7 @@ def main():
     )
     if positions_qs.exists():
         call_command("resync_klines_dynamically")
-        call_command("best_reco_v2")
+        call_command("best_reco_v3")
 
     for position in positions_qs:
         CronLog.objects.create(name="Liquidating position", log_message=str(position))

@@ -1,8 +1,5 @@
 from apps.market_data.generate_market_data_hdf_utils import (
-    create_dataframe_v2,
-    save_output,
     fetch_input,
-    command_datetime,
     create_base_dataframe,
     merge_symbols_and_kline_attrs,
     add_forecasts_to_df,
@@ -17,6 +14,10 @@ from django.utils import timezone
 from datetime import timedelta
 import pandas as pd
 import tqdm
+from apps.market_data.generate_market_data_hdf_utils import (
+    add_hyperfeatures_to_df,
+    clean_initial_window_nans,
+)
 
 kline_attrs = ["close_price", "volume"]
 
@@ -50,6 +51,23 @@ def C_transform(df, symbols_kline_attrs):
 
 class IncompleteDataframeException(Exception):
     pass
+
+
+def create_base_hdf_v1_moments(coin, days, live=False):
+
+    hours = int(days * 24)
+    start = timezone.now() - timedelta(hours=hours)
+    end = timezone.now()
+    qs = fetch_input((start, end), [coin])
+
+    kline_attrs = ["close_price", "volume"]
+    df = create_base_dataframe(qs, kline_attrs=kline_attrs)
+    base_columns = df.columns
+    df = add_hyperfeatures_to_df(df)
+    df = add_forecasts_to_df(df, live=live)
+    df = clean_initial_window_nans(df)
+    df = df.drop(columns=base_columns)
+    return df
 
 
 def create_base_hdf(coin, days, live=False):
