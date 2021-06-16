@@ -35,8 +35,6 @@ def main():
             name="Skipping open because br is pass in last 15 mins",
             log_message="",
         )
-        call_command("resync_klines_dynamically")
-        call_command("best_reco_v3")
         return
 
     try:
@@ -46,7 +44,8 @@ def main():
                 name="Skipping open because br is not fresh",
                 log_message="",
             )
-
+            call_command("resync_klines_dynamically")
+            call_command("best_reco_v3")
             return
         if br.side == BestRecommendation.LONG:
             side = Position.LONG
