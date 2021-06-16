@@ -28,7 +28,10 @@ def create_model(df_orig, coin):
     index = len(df_orig) - 2
 
     start = index - (train_size + test_size)
+    assert start > 0
     end = index
+    assert end > 0
+
     df_orig = df_orig[start:end]
 
     df = df_orig.copy()
@@ -93,11 +96,11 @@ def main():
     br.start_evaluating = now()
     br.save()
 
-    df_train = create_base_hdf_v1_moments("ADAUSDT", 60, live=False)
+    df_train = create_base_hdf_v1_moments("ADAUSDT", 61, live=False)
 
     expected_len = 60 * 24 * 60
-    assert len(df_train) > (expected_len - 1000)
-    assert len(df_train) < (expected_len + 1000)
+    assert len(df_train) > (expected_len - 2000)
+    assert len(df_train) < (expected_len + 2000)
 
     model = create_model(df_train, "ADA")
 
