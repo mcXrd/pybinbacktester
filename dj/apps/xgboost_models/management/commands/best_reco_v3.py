@@ -5,6 +5,7 @@ from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from apps.market_data.sync_kline_utils import stop_process_pool
 from django.core.management import call_command
 from apps.xgboost_models.create_hdfs_for_models import create_base_hdf, C_transform
+from django.conf import settings
 
 
 from sklearn.model_selection import train_test_split
@@ -92,17 +93,21 @@ def main():
     br.start_evaluating = now()
     br.save()
 
-    df_train = create_base_hdf_v1_moments("ADAUSDT", 61, live=False)
+    initial_clean_days = int((settings.LARGEST_DF_WINDOW / 60) / 24) + 1
+    df_train = create_base_hdf_v1_moments(
+        "ADAUSDT", 61 + initial_clean_days, live=False
+    )
 
     expected_len = 60 * 24 * 60
-    assert len(df_train) > (expected_len - 2000)
-    assert len(df_train) < (expected_len + 2000)
+
+    assert len(df_train) > (expected_len - 3000)
+    assert len(df_train) < (expected_len + 3000)
 
     model = create_model(df_train, "ADA")
 
     call_command("resync_klines_dynamically")
 
-    df_eval = create_base_hdf_v1_moments("ADAUSDT", 4, live=True)
+    df_eval = create_base_hdf_v1_moments("ADAUSDT", 4+initial_clean_days, live=True)
 
     profit, side = predict_row(df_eval, len(df_eval) - 1, model, "ADA")
     t = {
