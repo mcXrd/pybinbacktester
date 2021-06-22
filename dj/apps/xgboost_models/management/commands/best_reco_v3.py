@@ -37,12 +37,8 @@ def create_model(df_orig, coin):
     df = df_orig.copy()
     Y = df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)]
 
-    Y_MEAN = np.mean(np.abs(Y))
-    Y_MEAN = Y_MEAN * (1 / 2)
-
-    Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] > Y_MEAN] = 20
-    Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] < -Y_MEAN] = 10
-    Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] < 9] = 1
+    Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] > 0] = 20
+    Y[df["trade_in_1h_usdtfutures_{}USDT_close_price".format(coin)] <= 0] = 10
 
     first_element = "usdtfutures_{}USDT_close_price_ewm_mean".format(coin)
 

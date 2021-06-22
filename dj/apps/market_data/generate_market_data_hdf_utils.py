@@ -107,11 +107,13 @@ def create_base_dataframe(
 def add_hyperfeatures_to_df(df):
     original_columns = list(df.columns)
 
+    df["daytime"] = df.index.hour / 24
+
     for c in original_columns:
         df["{}_ewm_mean".format(c)] = df[c].ewm(com=10).mean()
         df["{}_ewm_std".format(c)] = df[c].ewm(com=10).std()
         df["{}_ewm_cov".format(c)] = df[c].ewm(com=10).cov()
-        windows = [10, 120, 240, 480]
+        windows = [10, 120, 240, 480, 1500, 4500]
         # assert max(windows) < settings.LARGEST_DF_WINDOW
         for base_size in windows:
             df["{}_mean_{}".format(c, base_size)] = (
