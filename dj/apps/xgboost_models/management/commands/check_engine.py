@@ -1,7 +1,6 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from apps.predictive_models.models import AlertLog
 from django.utils.timezone import now, timedelta
 from apps.predictive_models.models import Position
@@ -14,10 +13,10 @@ logger = logging.getLogger(__name__)
 def main():
     send_sms = False
     positions_qs = Position.objects.filter(
-        liquidated=False, liquidated_at__lte=now() - timedelta(minutes=20)
+        liquidated=False, liquidate_at__lte=now() - timedelta(minutes=20)
     )
 
-    if positions_qs.exists():  # position not liquidated and liquidated_at not extended
+    if positions_qs.exists():  # position not liquidated and liquidate_at not extended
         send_sms = True
 
     positions_qs = Position.objects.filter(liquidated=False)
@@ -26,7 +25,7 @@ def main():
         all_closed = False
 
     positions_qs = Position.objects.filter(
-        liquidated_at__gte=now() - timedelta(minutes=20)
+        liquidate_at__gte=now() - timedelta(minutes=20)
     )
     if (
         not positions_qs.exists() and all_closed
