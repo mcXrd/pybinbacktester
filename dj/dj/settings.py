@@ -129,7 +129,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 
 
-from .secrets import BINANCE_API_KEY, BINANCE_SECRET_KEY
+from .secrets import BINANCE_API_KEY, BINANCE_SECRET_KEY, SNS_ACCESS_KEY, SNS_SECRET_KEY
 
 
 LOGGING = {

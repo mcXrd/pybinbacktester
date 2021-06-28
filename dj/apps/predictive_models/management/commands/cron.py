@@ -18,6 +18,7 @@ def main():
             time.sleep(1)
             currenct_second = now().second
             if currenct_second < 5:
+                call_command("check_engine")
                 call_command("liquidate_positions")
                 time.sleep(3)
                 call_command("open_positions_v2")
