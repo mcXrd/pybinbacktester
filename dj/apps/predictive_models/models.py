@@ -148,6 +148,13 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             PositionLog.objects.create(
                 position=position, name="Order attempt", log_message=msg
             )
+            """
+            !!! extremely important info
+            To send a POST ONLY order,
+
+            In Spot: set the order type parameter ( type) to LIMIT_MAKER
+            In Futures : set the time in force parameter (timeInForce) to GTX
+            """
             try:
                 order = request_client.post_order(
                     symbol=position.base_symbol,
@@ -155,7 +162,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                     ordertype=OrderType.LIMIT,
                     price=noised_price,
                     quantity=str(position.quantity),
-                    timeInForce=TimeInForce.GTC,
+                    timeInForce=TimeInForce.GTX, # extremely important, otherwise maker order is not sure
                 )
             except Exception as e:
                 insufficient_margin_str = "argin is insufficient"
