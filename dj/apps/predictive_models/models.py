@@ -85,13 +85,13 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         return price
 
     def wait_for_orders_to_fill(self, request_client, position):
-        iters_to_wait = 3
+        iters_to_wait = 5
         iters = 0
         while True:
             if not position.alive:
                 raise Exception("Executing position which is not alive")
             iters += 1
-            time.sleep(1)
+            time.sleep(3)
             res = request_client.get_open_orders()
             if len(res) == 0:
                 return True
