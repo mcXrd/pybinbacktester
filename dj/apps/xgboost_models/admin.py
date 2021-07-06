@@ -14,7 +14,7 @@ class BestModelCodeAdmin(admin.ModelAdmin):
 
 
 class BestRecommendationAdmin(admin.ModelAdmin):
-    readonly_fields = ["start_evaluating", "done_evaluating"]
+    readonly_fields = ["start_evaluating"]
     list_display = (
         "symbol",
         "side",
