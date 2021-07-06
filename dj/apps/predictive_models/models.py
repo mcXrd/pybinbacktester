@@ -84,7 +84,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
         price = price + noise
         return price
 
-    def wait_for_orders_to_fill(self, request_client, position):
+    def wait_for_orders_to_fill(self, request_client, position, order_id, symbol):
         iters_to_wait = 5
         iters = 0
         while True:
@@ -92,6 +92,12 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                 raise Exception("Executing position which is not alive")
             iters += 1
             time.sleep(3)
+            last_order = request_client.get_all_orders(orderId=order_id, symbol=symbol)[
+                0
+            ]
+            if last_order.status == "EXPIRED":
+                return False
+
             res = request_client.get_open_orders()
             if len(res) == 0:
                 return True
@@ -162,7 +168,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
                     ordertype=OrderType.LIMIT,
                     price=noised_price,
                     quantity=str(position.quantity),
-                    timeInForce=TimeInForce.GTX, # extremely important, otherwise maker order is not sure
+                    timeInForce=TimeInForce.GTX,  # extremely important, otherwise maker order is not sure
                 )
             except Exception as e:
                 insufficient_margin_str = "argin is insufficient"
@@ -190,7 +196,7 @@ class TradeInterfaceBinanceFutures(TradeInterface):
             log = PositionLog.objects.create(position=position, name="Order posted")
             log.log_order(order)
             if self.wait_for_orders_to_fill(
-                request_client, position
+                request_client, position, order.orderId, position.base_symbol
             ):  # order was filled
                 break
 
