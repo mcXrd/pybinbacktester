@@ -1,12 +1,13 @@
 from django.test import TestCase
 from apps.market_data.generate_market_data_hdf_utils import create_base_dataframe
-from apps.market_data.management.commands.sync_klines import (
+from apps.market_data.sync_kline_utils import (
     insert_klines,
     remove_too_old_klines,
     EXCHANGE_FUTURES,
     EXCHANGE_SPOT,
 )
 from apps.market_data.models import Kline
+from apps.market_data.market_depth_utils import list_symbol_pairs, get_trades
 
 TIME_INTERVAL = "360 days ago UTC"
 
@@ -160,3 +161,12 @@ class GenerateMarketDataHDFTestCase(TestCase):
         df = create_base_dataframe(Kline.objects.all())
         close_price = TEST_KLINES[0][4]
         assert float(df[EXCHANGE_SPOT + "_ethbtc_close_price"][0]) == float(close_price)
+
+
+class MarketDepthTest(TestCase):
+    def test_pairs_listing(self):
+        self.assertLess(0, len(list_symbol_pairs()))
+
+    def test_get_trades(self):
+        res = get_trades(list_symbol_pairs()[0])
+        raise Exception(res)

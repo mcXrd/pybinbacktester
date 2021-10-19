@@ -13,6 +13,7 @@ from binance_f.model import CandlestickInterval
 from apps.market_data.usdtfutures_utils import get_usdtfutures_historical_klines
 from requests.exceptions import ConnectionError
 from concurrent.futures import TimeoutError, ProcessPoolExecutor
+from django.db.models import Count
 import time
 
 from apps.market_data.models import Kline
@@ -52,16 +53,49 @@ def get_usdt_futures_klines(symbol: str, time_interval: List[str]) -> List[List]
     )
 
 
-def insert_klines(symbol: str, get_klines: Callable, exchange: str, time_interval: str):
+def create_complete_symbol_name(exchange, symbol):
+    return exchange + "_" + symbol
+
+
+def remove_klines_duplicates(klines):
+    already_seen = set()
+    new_klines = []
+    for kline in klines:
+        close_time = kline[6]
+        if close_time in already_seen:
+            continue
+        already_seen.add(close_time)
+        new_klines.append(kline)
+    return new_klines
+
+
+def insert_klines(
+    symbol: str, get_klines: Callable, exchange: str, time_interval: List[datetime.date]
+):
+    date1 = time_interval[0]
+    date2 = time_interval[1]
+
     for one in range(4):
         try:
-            klines = get_klines(symbol, time_interval)
+            klines = []
+            while True:
+                temp_date2 = date1 + timedelta(days=5)
+                if date2 <= temp_date2:
+                    klines = klines + list(get_klines(symbol, [str(date1), str(date2)]))
+                    break
+                klines = klines + list(
+                    get_klines(symbol, [str(date1), str(temp_date2)])
+                )
+                date1 = temp_date2
+                time.sleep(5)
             break
         except ConnectionError:
-            time.sleep(70)
+            time.sleep(170)
+
+    klines = remove_klines_duplicates(klines)
 
     bulk_klines = []
-    complete_symbol = exchange + "_" + symbol
+    complete_symbol = create_complete_symbol_name(exchange, symbol)
 
     for kline in klines:
         open_time = binance_timestamp_to_utc_datetime(kline[0])
@@ -98,8 +132,8 @@ def remove_too_old_klines(days=1):
 def main(
     time_interval=None,
     coins=None,
-    use_spot=False,
-    use_futures=True,
+    use_spot=True,
+    use_futures=False,
 ):
     binance_client = BinanceClient(
         settings.BINANCE_API_KEY, settings.BINANCE_SECRET_KEY

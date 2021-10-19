@@ -33,9 +33,5 @@ class Kline(models.Model):
         )
         return k
 
-
-class DatabaseSync(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    success = models.BooleanField(null=True, blank=True)
-    retries = models.IntegerField(null=True, blank=True)
+    def __str__(self):
+        return str(self.symbol) + " --- " + str(self.close_time)

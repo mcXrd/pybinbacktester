@@ -21,7 +21,7 @@ class Command(BaseCommand):
             nargs="+",
             type=command_datetime,
             required=False,
-            help="'2002-12-25 00:00:00' '2019-01-1 00:00:00'",
+            help="'2002-12-25 00:00:00' '2025-01-1 00:00:00'",
         )
         parser.add_argument("--hdf-filename", type=str, required=True)
 
@@ -35,6 +35,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         qs = fetch_input(kwargs["time_interval"], kwargs["pairs"])
-        output_df = create_dataframe(qs, live=True)
+        output_df = create_dataframe(qs, live=False)
         output_df = clean_initial_window_nans(output_df)
         save_output(output_df, kwargs["hdf_filename"])
