@@ -47,8 +47,8 @@ def fetch_input(
 def exchangify_pairs(pairs):
     ret = []
     for pair in pairs:
-        ret.append(settings.EXCHANGE_FUTURES + "_" + pair)
-        # ret.append(settings.EXCHANGE_SPOT + "_" + pair)
+        #ret.append(settings.EXCHANGE_FUTURES + "_" + pair)
+        ret.append(settings.EXCHANGE_SPOT + "_" + pair)
     return ret
 
 
@@ -108,26 +108,41 @@ def add_hyperfeatures_to_df(df):
     original_columns = list(df.columns)
 
     df["daytime"] = df.index.hour / 24
+    #df["daytime"] = 1
 
     for c in original_columns:
         df["{}_ewm_mean".format(c)] = df[c].ewm(com=10).mean()
         df["{}_ewm_std".format(c)] = df[c].ewm(com=10).std()
         df["{}_ewm_cov".format(c)] = df[c].ewm(com=10).cov()
-        windows = [10, 120, 240, 480, 1500, 4500]
+
+        windows = {10, 60, 120, 240}
         # assert max(windows) < settings.LARGEST_DF_WINDOW
         for base_size in windows:
-            df["{}_mean_{}".format(c, base_size)] = (
-                df[c].rolling(window=base_size).mean()
-            )
-            df["{}_skew_{}".format(c, base_size)] = (
-                df[c].rolling(window=base_size).skew()
-            )
-            df["{}_kurt_{}".format(c, base_size)] = (
-                df[c].rolling(window=base_size).kurt()
-            )
-            df["{}_std_{}".format(c, base_size)] = df[c].rolling(window=base_size).std()
-            df["{}_cov_{}".format(c, base_size)] = df[c].rolling(window=base_size).cov()
+            shifts = [0, 240, 480]
+            for shift in shifts:
+                df["shift_{}_{}_mean_{}".format(shift, c, base_size)] = (
+                    df[c].shift(shift).rolling(window=base_size).mean()
+                )
+                # df["{}_var_{}".format(c, base_size)] = (
+                #    df[c].rolling(window=base_size).var()
+                # )
+                df["shift_{}_{}_skew_{}".format(shift, c, base_size)] = (
+                    df[c].shift(shift).rolling(window=base_size).skew()
+                )
+                df["shift_{}_{}_kurt_{}".format(shift, c, base_size)] = (
+                    df[c].shift(shift).rolling(window=base_size).kurt()
+                )
+                df["shift_{}_{}_std_{}".format(shift, c, base_size)] = (
+                    df[c].shift(shift).rolling(window=base_size).std()
+                )
+                # df["{}_cov_{}".format(c, base_size)] = df[c].rolling(window=base_size).cov()
 
+    columns_to_normalize = set(df.columns) - set(original_columns)
+    columns_to_normalize = list(columns_to_normalize)
+    from sklearn.preprocessing import StandardScaler
+
+    scaler = StandardScaler()
+    df[columns_to_normalize] = scaler.fit_transform(df[columns_to_normalize])
     return df
 
 
@@ -154,9 +169,11 @@ def get_number_of_trades_columns(df):
 def add_forecasts_to_df(df, live, shift=60):
     close_price_columns = get_close_price_columns(df)
     for c in close_price_columns:
+        """
         if "spot" in c:
             continue
-
+        """
+        shift = 180
         trade_in_1h = "trade_in_1h_{}".format(c)
         df.insert(0, trade_in_1h, np.ones(df.shape[0]))
         df[trade_in_1h] = df.shift(-1 * shift)[c] / df[c] - 1
@@ -169,7 +186,8 @@ def add_forecasts_to_df(df, live, shift=60):
 def create_dataframe(
     input_queryset: django.db.models.query.QuerySet, live=False
 ) -> pd.DataFrame:
-    kline_attrs = ["close_price", "volume"]
+    #kline_attrs = ["close_price", "volume"]
+    kline_attrs = None
     df = create_base_dataframe(input_queryset, kline_attrs=kline_attrs)
     base_columns = df.columns
     df = add_hyperfeatures_to_df(df)

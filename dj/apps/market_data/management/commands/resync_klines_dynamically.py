@@ -20,6 +20,6 @@ class Command(BaseCommand):
         sync_kline_main(
             time_interval=["{} minutes ago UTC".format(minutes_to_sync)],
             coins=["ADAUSDT"],
-            use_spot=False,
-            use_futures=True,
+            use_spot=True,
+            use_futures=False,
         )

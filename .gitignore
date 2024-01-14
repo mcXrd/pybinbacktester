@@ -115,7 +115,10 @@ dj/dj/secrets.py
 .idea/
 
 # static storage
-dj/static_storage/*
+dj/static_storage/*.csv
+dj/static_storage/contest/*.csv
+dj/static_storage/*.hdf
+dj/static_storage/agf/*.hdf
 
 # model state dict
 dj/apps/predictive_models/jane1/*.pt
